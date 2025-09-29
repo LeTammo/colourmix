@@ -141,7 +141,11 @@ function App() {
         return combined;
     }
 
-    const chooseRandomColor = () => {
+    const startNewGame = () => {
+        if (timer > 0) {
+            return;
+        }
+        setSelection(new Map());
         setTargetColor(createRandomColor(colors));
         setTimer(20);
     }
@@ -197,7 +201,7 @@ function App() {
                         <div>
                             <div
                                 className={`timer-display flex flex-col items-center cursor-pointer`}
-                                onClick={() => chooseRandomColor()}
+                                onClick={() => startNewGame()}
                             >
                                 <div
                                     className={`timer-circle w-24 h-24 border-4 rounded-full bg-white shadow-md
