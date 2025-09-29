@@ -48,7 +48,8 @@ export function calculateHex(cmyk: Map<string, number[]>): string {
     b = Math.round(b);
 
     const toHex = (colorValue: number) => colorValue.toString(16).padStart(2, '0');
-    const hex = `#${toHex(r)}${toHex(g)}${toHex(b)}ff`;
+    const hex = `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+
     return hex.toUpperCase();
 }
 
