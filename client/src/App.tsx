@@ -199,10 +199,10 @@ function App() {
                                 className={`timer-display flex flex-col items-center cursor-pointer`}
                                 onClick={() => chooseRandomColor()}
                             >
-                                <h2 className="text-2xl font-semibold text-center pb-3">Zeit</h2>
                                 <div
-                                    className={`timer-circle w-24 h-24 border-4 rounded-full flex items-center justify-center bg-white shadow-md transition-all
-                                        ${timer <= 0 ? "animate-pulse ring-4 ring-blue-400" : ""}`}
+                                    className={`timer-circle w-24 h-24 border-4 rounded-full bg-white shadow-md
+                                                flex items-center justify-center mt-16 transition-all 
+                                                ${timer <= 0 ? "animate-pulse ring-4 ring-blue-400" : ""}`}
                                 >
                                     <span className="text-4xl font-bold">
                                         {timer === -1 ? <StartPlayingIcon /> : timer}
