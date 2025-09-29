@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { colors, createRandomColor, calculateHex } from "./lib/color";
 // import Chat from "./components/Chat.tsx";
 import StartGameIcon from "./components/StartGameIcon.tsx";
@@ -59,6 +59,16 @@ function App() {
         }
     }, [timer]);
 
+    const paletteColors = useMemo(() => {
+        return [...colors.entries()].map(([name, arr]) => {
+            const color = calculateHex(new Map([[name, arr]]));
+            return { name, arr, color };
+        });
+    }, [colors]);
+
+    const targetColorHex = useMemo(() => calculateHex(targetColor), [targetColor]);
+    const mixedColorHex = useMemo(() => calculateHex(currentMix), [currentMix]);
+
 
     return (
         <div className="flex bg-gray-100 font-poppins h-screen">
@@ -75,15 +85,15 @@ function App() {
                                     <div
                                         className="color-card w-36 h-36 border-4 rounded-xl transition-colors duration-1000 ease-in-out"
                                         style={{
-                                            borderColor: `color-mix(in srgb, ${calculateHex(targetColor)} 100%, black 50%)`,
-                                            backgroundColor: `${calculateHex(targetColor)}`
+                                            borderColor: `color-mix(in srgb, ${targetColorHex} 100%, black 50%)`,
+                                            backgroundColor: targetColorHex
                                         }}
                                     ></div>
                                 ) : (
                                     <div
-                                        className="color-card w-36 h-36 border-4 rounded-xl bg-gray-300 border-gray-400 flex items-center justify-center text-gray-500 text-lg"
-                                    >
-                                    </div>
+                                        className="color-card w-36 h-36 flex items-center justify-center border-4 rounded-xl
+                                                   bg-gray-300 border-gray-400 text-lg"
+                                    ></div>
                                 )}
                             </div>
                         </div>
@@ -109,8 +119,8 @@ function App() {
                                 <div
                                     className="color-card w-36 h-36 border-4 rounded-xl transition-colors duration-1000 ease-in-out"
                                     style={{
-                                        borderColor: `color-mix(in srgb, ${calculateHex(currentMix)} 100%, black 50%)`,
-                                        backgroundColor: `${calculateHex(currentMix)}`
+                                        borderColor: `color-mix(in srgb, ${mixedColorHex} 100%, black 50%)`,
+                                        backgroundColor: mixedColorHex
                                     }}
                                 ></div>
                             </div>
@@ -118,19 +128,23 @@ function App() {
                     </section>
 
                     <main className="palette-section grid grid-cols-6 gap-4">
-                        {[...colors.entries()].map((c) => {
-                            const isSelected = selection.has(c[0]);
+                        {paletteColors.map((c) => {
+                            const isSelected = selection.has(c.name);
+                            const style = {
+                                borderColor: `color-mix(in srgb, ${c.color} 100%, black 50%)`,
+                                backgroundColor: c.color,
+                            };
                             return (
                                 <div
-                                    key={c[0]}
-                                    onClick={() => handleColorSelect(c)}
+                                    key={c.name}
+                                    onClick={() => handleColorSelect([c.name, c.arr])}
                                     className={`color-card w-30 h-40 rounded-xl flex items-end justify-end
-                                           cursor-pointer hover:scale-105 transition-transform
-                                           ${isSelected ? 'border-6' : 'border-2'}`}
-                                    style={{borderColor: `color-mix(in srgb, ${calculateHex(new Map([[c[0], c[1]]]))} 100%, black 50%)`, backgroundColor: `${calculateHex(new Map([[c[0], c[1]]]))}`}}
-                                    data-color={c[0]}
+                                                cursor-pointer hover:scale-105 transition-transform
+                                                ${isSelected ? 'border-6' : 'border-2'}`}
+                                    style={style}
+                                    data-color={c.name}
                                 >
-                                    <div className="card-text p-2 font-bold text-white text-shadow-test">{c[0]}</div>
+                                    <div className="card-text p-2 font-bold text-white text-shadow-test">{c.name}</div>
                                 </div>
                             );
                         })}
