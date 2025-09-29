@@ -139,8 +139,8 @@ function App() {
                                     key={c.name}
                                     onClick={() => handleColorSelect([c.name, c.arr])}
                                     className={`color-card w-30 h-40 rounded-xl flex items-end justify-end
-                                                cursor-pointer hover:scale-105 transition-transform
-                                                ${isSelected ? 'border-6' : 'border-2'}`}
+                                                cursor-pointer border-2 hover:border-4 transition-transform
+                                                ${isSelected ? 'scale-105 border-6' : ''}`}
                                     style={style}
                                     data-color={c.name}
                                 >
