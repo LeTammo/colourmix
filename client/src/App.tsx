@@ -231,9 +231,9 @@ function App() {
                                 <div
                                     key={c[0]}
                                     onClick={() => handleColorSelect(c)}
-                                    className={`color-card w-30 h-40 border-4 rounded-xl flex items-end justify-end
+                                    className={`color-card w-30 h-40 rounded-xl flex items-end justify-end
                                            cursor-pointer hover:scale-105 transition-transform
-                                           ${isSelected ? 'ring-4 ring-offset-2 ring-blue-500' : ''}`}
+                                           ${isSelected ? 'border-6' : 'border-2'}`}
                                     style={{borderColor: `color-mix(in srgb, ${calculateHex(new Map([[c[0], c[1]]]))} 100%, black 50%)`, backgroundColor: `${calculateHex(new Map([[c[0], c[1]]]))}`}}
                                     data-color={c[0]}
                                 >
