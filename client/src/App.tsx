@@ -90,9 +90,8 @@ function App() {
                             </div>
                         </div>
                         <div>
-                            <div
-                                className={`timer-display flex flex-col items-center cursor-pointer`}
-                                onClick={() => startNewGame()}
+                            <div className={`timer-display flex flex-col items-center cursor-pointer`}
+                                 onClick={() => startNewGame()}
                             >
                                 <div className={`timer-circle w-24 h-24 border-4 rounded-full bg-white shadow-md
                                                 flex items-center justify-center mt-16 transition-all 
