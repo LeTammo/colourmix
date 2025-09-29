@@ -9,10 +9,7 @@ function App() {
     const chatEndRef = useRef<HTMLDivElement | null>(null);
 
     useEffect(() => {
-        const scrollToBottom = () => {
-            chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
-        };
-        scrollToBottom();
+        chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
     }, [chat]);
 
     useEffect(() => {
@@ -36,29 +33,42 @@ function App() {
     };
 
     return (
-        <div className="app-container">
-            <div className="game-board">
-                <h1>Game board will be here</h1>
+        <div className="flex h-screen w-screen bg-gray-100">
+
+            <div className="flex-grow w-3/4 flex items-center justify-center bg-gray-200 text-gray-500">
+                <h1 className="text-3xl font-bold">Game board will be here</h1>
             </div>
-            <div className="chat-container">
-                <div className="chat-header">
-                    <h2>Chat Room</h2>
+
+            <div className="w-1/4 flex flex-col bg-white border-l border-gray-300 shadow-lg">
+
+                <div className="p-5 border-b border-gray-200 bg-gray-50">
+                    <h2 className="text-xl font-semibold text-gray-800">Chat</h2>
                 </div>
-                <div className="chat-messages">
-                    <ul>
+
+                <div className="flex-grow overflow-y-auto p-5">
+                    <ul className="space-y-3">
                         {chat.map((c, i) => (
-                            <li key={i}>{c}</li>
+                            <li key={i} className="p-2 px-3 bg-blue-100 text-gray-800 rounded-lg max-w-[85%] break-words">
+                                {c}
+                            </li>
                         ))}
                     </ul>
                     <div ref={chatEndRef} />
                 </div>
-                <form className="chat-form" onSubmit={sendMessage}>
+
+                <form className="p-5 border-t border-gray-200 bg-gray-50 flex items-center" onSubmit={sendMessage}>
                     <input
+                        className="flex-grow p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                         value={msg}
                         onChange={(e) => setMsg(e.target.value)}
                         placeholder="Type a message..."
                     />
-                    <button type="submit">Send</button>
+                    <button
+                        type="submit"
+                        className="ml-3 py-2 px-4 bg-blue-600 text-white font-semibold rounded-md hover:bg-blue-700 transition-colors"
+                    >
+                        Send
+                    </button>
                 </form>
             </div>
         </div>
