@@ -112,7 +112,7 @@ function App() {
 
 
     const handleColorSelect = (selectedColor: [string, number[]]) => {
-        if (timer === 0) {
+        if (timer <= 0) {
             return;
         }
 
@@ -124,7 +124,7 @@ function App() {
         if (newSelection.has(selectedColor[0])) {
             newSelection.delete(selectedColor[0]);
         } else {
-            newSelection.set(selectedColor[0], 1);
+            newSelection.set(selectedColor[0], selectedColor[1]);
         }
 
         setSelection(newSelection);
