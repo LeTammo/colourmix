@@ -28,18 +28,17 @@ const colors = new Map(
 );
 
 function createRandomColor(colors: Map<string, number[]>): Map<string, number[]> {
-    const colorSet = new Map<string, number[]>();
-    const numColors = Math.floor(Math.random() * 3) + 2;
-    const colorKeys = Array.from(colors.keys());
+    const keys = Array.from(colors.keys());
 
-    while (colorSet.size < numColors) {
-        const randomIndex = Math.floor(Math.random() * colorKeys.length);
-        const key = colorKeys[randomIndex];
-        if (!colorSet.has(key)) {
-            colorSet.set(key, colors.get(key)!);
-        }
+    for (let i = keys.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [keys[i], keys[j]] = [keys[j], keys[i]];
     }
-    return colorSet;
+
+    const numColors = 2 + Math.floor(Math.random() * 3);
+    const chosen = keys.slice(0, numColors);
+    console.log(chosen);
+    return new Map(chosen.map(k => [k, colors.get(k)!]));
 }
 
 function StartPlayingIcon() {
