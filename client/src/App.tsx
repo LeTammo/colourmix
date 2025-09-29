@@ -8,31 +8,42 @@ type ColorData = {
     color: number[];
 };
 
+const colorsOrigin: ColorData[] = [
+    {name: "C10", color: [0.1, 0, 0, 0]},
+    {name: "C30", color: [0.3, 0, 0, 0]},
+    {name: "C60", color: [0.6, 0, 0, 0]},
+    {name: "M10", color: [0, 0.1, 0, 0]},
+    {name: "M30", color: [0, 0.3, 0, 0]},
+    {name: "M60", color: [0, 0.6, 0, 0]},
+    {name: "Y10", color: [0, 0, 0.1, 0]},
+    {name: "Y30", color: [0, 0, 0.3, 0]},
+    {name: "Y60", color: [0, 0, 0.6, 0]},
+    {name: "K10", color: [0, 0, 0, 0.1]},
+    {name: "K30", color: [0, 0, 0, 0.3]},
+    {name: "K60", color: [0, 0, 0, 0.6]},
+];
+
+const colors = new Map(
+    colorsOrigin.map(({ name, color }) => [name, color])
+);
+
 function App() {
     const [msg, setMsg] = useState("");
     const [chat, setChat] = useState<string[]>([]);
     const chatEndRef = useRef<HTMLDivElement | null>(null);
-    const [targetColor, setTargetColor] = useState([0.3, 0.6, 0.7, 0]);
-    const [currentMix, setCurrentMix] = useState([0, 0, 0, 0]);
-    const [selection, setSelection] = useState(new Map<string, number>());
+    const [targetColor, setTargetColor] = useState(new Map([
+        ["C10", colors.get("C10")],
+        ["M30", colors.get("M30")],
+        ["Y60", colors.get("Y60")]
+    ]));
+    const [currentMix, setCurrentMix] = useState(new Map<string, number[]>());
+    const [selection, setSelection] = useState(new Map<string, number[]>());
     const [maxSelection] = useState(4);
+    const [timer, setTimer] = useState(0);
 
-    const colors: ColorData[] = [
-        {name: "C10", color: [0.1, 0, 0, 0]},
-        {name: "C30", color: [0.3, 0, 0, 0]},
-        {name: "C60", color: [0.6, 0, 0, 0]},
-        {name: "M10", color: [0, 0.1, 0, 0]},
-        {name: "M30", color: [0, 0.3, 0, 0]},
-        {name: "M60", color: [0, 0.6, 0, 0]},
-        {name: "Y10", color: [0, 0, 0.1, 0]},
-        {name: "Y30", color: [0, 0, 0.3, 0]},
-        {name: "Y60", color: [0, 0, 0.6, 0]},
-        {name: "K10", color: [0, 0, 0, 0.1]},
-        {name: "K30", color: [0, 0, 0, 0.3]},
-        {name: "K60", color: [0, 0, 0, 0.6]},
-    ];
+    function calculateHex(cmyk: Map<string, number[]>): string {
+        const [c, m, y, k] = calculateColor(cmyk);
 
-    function cmykToRgbAndHex([c, m, y, k]: number[]): string {
         let r = 255 * (1 - c) * (1 - k);
         let g = 255 * (1 - m) * (1 - k);
         let b = 255 * (1 - y) * (1 - k);
@@ -68,38 +79,84 @@ function App() {
         }
     };
 
-
     useEffect(() => {
-        const nextMix = [0, 0, 0, 0];
-
+        const nextMix = new Map<string, number[]>();
         for (const colorName of selection.keys()) {
-            const colorData = colors.find(c => c.name === colorName);
-            if (colorData) {
-                nextMix[0] += colorData.color[0];
-                nextMix[1] += colorData.color[1];
-                nextMix[2] += colorData.color[2];
-                nextMix[3] += colorData.color[3];
+            const colorArr = colors.get(colorName);
+            if (colorArr) {
+                nextMix.set(colorName, colorArr);
             }
         }
-
         setCurrentMix(nextMix);
     }, [selection]);
 
 
-    const handleColorSelect = (selectedColor: ColorData) => {
-        const newSelection = new Map(selection);
-
-        if (newSelection.size >= maxSelection && !newSelection.has(selectedColor.name)) {
+    const handleColorSelect = (selectedColor: [string, number[]]) => {
+        if (timer === 0) {
             return;
         }
-        if (newSelection.has(selectedColor.name)) {
-            newSelection.delete(selectedColor.name);
+
+        const newSelection = new Map(selection);
+
+        if (newSelection.size >= maxSelection && !newSelection.has(selectedColor[0])) {
+            return;
+        }
+        if (newSelection.has(selectedColor[0])) {
+            newSelection.delete(selectedColor[0]);
         } else {
-            newSelection.set(selectedColor.name, 1);
+            newSelection.set(selectedColor[0], 1);
         }
 
         setSelection(newSelection);
     };
+
+    function calculateColor(colors: Map<string, number[]>): number[] {
+        const combined = [0, 0, 0, 0];
+        for (const color of colors.values()) {
+            combined[0] += color[0];
+            combined[1] += color[1];
+            combined[2] += color[2];
+            combined[3] += color[3];
+        }
+        return combined;
+    }
+
+    const chooseRandomColor = () => {
+        const colorSet = new Map<string, number[]>();
+        const numColors = Math.floor(Math.random() * 3) + 2;
+        const colorKeys = Array.from(colors.keys());
+
+        while (colorSet.size < numColors) {
+            const randomIndex = Math.floor(Math.random() * colorKeys.length);
+            const key = colorKeys[randomIndex];
+            if (!colorSet.has(key)) {
+                colorSet.set(key, colors.get(key)!);
+            }
+        }
+
+        setTargetColor(colorSet);
+        setTimer(3);
+    }
+
+    useEffect(() => {
+        if (timer === 0) {
+            const mixArr = calculateColor(currentMix);
+            const targetArr = calculateColor(targetColor);
+            const isMatch = mixArr.every((value, index) => value === targetArr[index]);
+            if (isMatch) {
+                setChat((prevChat) => [...prevChat, "You matched the color!"]);
+            } else {
+                setChat((prevChat) => [...prevChat, "Time's up! You did not match the color."]);
+            }
+        }
+
+        if (timer > 0) {
+            const interval = setInterval(() => {
+                setTimer((prev) => prev - 1);
+            }, 1000);
+            return () => clearInterval(interval);
+        }
+    }, [timer]);
 
     return (
         <div className="flex bg-gray-100 font-poppins h-screen">
@@ -114,61 +171,46 @@ function App() {
                             <div className="color-swatch target-color">
                                 <div
                                     className="color-card w-36 h-36 border-4 rounded-xl transition-colors duration-1000 ease-in-out"
-                                    style={{borderColor: `color-mix(in srgb, ${cmykToRgbAndHex(targetColor)} 100%, black 50%)`,
-                                            backgroundColor: `${cmykToRgbAndHex(targetColor)}`}}
-                                    onClick={() => {
-                                        const randomColor = [];
-                                        const colorSet = new Set<number[]>();
-                                        const colorNameSet = new Set<string>();
-                                        const numColors = Math.floor(Math.random() * 3) + 2;
-
-                                        while (colorSet.size < numColors) {
-                                            const randomIndex = Math.floor(Math.random() * colors.length);
-                                            colorSet.add(colors[randomIndex].color);
-                                            colorNameSet.add(colors[randomIndex].name);
-                                        }
-
-                                        console.log("combined: ")
-                                        Array.from(colorNameSet).forEach(c => console.log(c));
-
-                                        for (const color of colorSet) {
-                                            randomColor[0] = (randomColor[0] || 0) + color[0];
-                                            randomColor[1] = (randomColor[1] || 0) + color[1];
-                                            randomColor[2] = (randomColor[2] || 0) + color[2];
-                                            randomColor[3] = (randomColor[3] || 0) + color[3];
-                                        }
-
-                                        setTargetColor(randomColor);
-                                    }}
+                                    style={{borderColor: `color-mix(in srgb, ${calculateHex(targetColor)} 100%, black 50%)`,
+                                            backgroundColor: `${calculateHex(targetColor)}`}}
+                                    onClick={() => chooseRandomColor()}
                                 ></div>
                             </div>
                         </div>
+                        <div>{
+                            <div className="timer-display flex flex-col items-center">
+                                <h2 className="text-2xl font-semibold text-center pb-3">Zeit</h2>
+                                <div className="timer-circle w-24 h-24 border-4 rounded-full flex items-center justify-center bg-white shadow-md">
+                                    <span className="text-4xl font-bold">{timer}</span>
+                                </div>
+                            </div>
+                        }</div>
                         <div className="color-display flex flex-col items-center">
                             <h2 className="text-2xl font-semibold text-center pb-3">Deine Mischung</h2>
                             <div className="color-swatch current-mix">
                                 <div
                                     className="color-card w-36 h-36 border-4 rounded-xl transition-colors duration-1000 ease-in-out"
-                                    style={{borderColor: `color-mix(in srgb, ${cmykToRgbAndHex(currentMix)} 100%, black 50%)`,
-                                            backgroundColor: `${cmykToRgbAndHex(currentMix)}`}}
+                                    style={{borderColor: `color-mix(in srgb, ${calculateHex(currentMix)} 100%, black 50%)`,
+                                            backgroundColor: `${calculateHex(currentMix)}`}}
                                 ></div>
                             </div>
                         </div>
                     </section>
 
                     <main className="palette-section grid grid-cols-6 gap-4">
-                        {colors.map((c) => {
-                            const isSelected = selection.has(c.name);
+                        {[...colors.entries()].map((c) => {
+                            const isSelected = selection.has(c[0]);
                             return (
                                 <div
-                                    key={c.name}
+                                    key={c[0]}
                                     onClick={() => handleColorSelect(c)}
                                     className={`color-card w-30 h-40 border-4 rounded-xl flex items-end justify-end
                                            cursor-pointer hover:scale-105 transition-transform
                                            ${isSelected ? 'ring-4 ring-offset-2 ring-blue-500' : ''}`}
-                                    style={{borderColor: `color-mix(in srgb, ${cmykToRgbAndHex(c.color)} 100%, black 50%)`, backgroundColor: `${cmykToRgbAndHex(c.color)}`}}
-                                    data-color={c.name}
+                                    style={{borderColor: `color-mix(in srgb, ${calculateHex(new Map([[c[0], c[1]]]))} 100%, black 50%)`, backgroundColor: `${calculateHex(new Map([[c[0], c[1]]]))}`}}
+                                    data-color={c[0]}
                                 >
-                                    <div className="card-text p-2 font-bold text-white text-shadow-test">{c.name}</div>
+                                    <div className="card-text p-2 font-bold text-white text-shadow-test">{c[0]}</div>
                                 </div>
                             );
                         })}
