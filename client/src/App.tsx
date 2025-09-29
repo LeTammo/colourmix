@@ -27,6 +27,21 @@ const colors = new Map(
     colorsOrigin.map(({ name, color }) => [name, color])
 );
 
+function createRandomColor(colors: Map<string, number[]>): Map<string, number[]> {
+    const colorSet = new Map<string, number[]>();
+    const numColors = Math.floor(Math.random() * 3) + 2;
+    const colorKeys = Array.from(colors.keys());
+
+    while (colorSet.size < numColors) {
+        const randomIndex = Math.floor(Math.random() * colorKeys.length);
+        const key = colorKeys[randomIndex];
+        if (!colorSet.has(key)) {
+            colorSet.set(key, colors.get(key)!);
+        }
+    }
+    return colorSet;
+}
+
 function App() {
     const [msg, setMsg] = useState("");
     const [chat, setChat] = useState<string[]>([]);
@@ -118,20 +133,8 @@ function App() {
     }
 
     const chooseRandomColor = () => {
-        const colorSet = new Map<string, number[]>();
-        const numColors = Math.floor(Math.random() * 3) + 2;
-        const colorKeys = Array.from(colors.keys());
-
-        while (colorSet.size < numColors) {
-            const randomIndex = Math.floor(Math.random() * colorKeys.length);
-            const key = colorKeys[randomIndex];
-            if (!colorSet.has(key)) {
-                colorSet.set(key, colors.get(key)!);
-            }
-        }
-
-        setTargetColor(colorSet);
-        setTimer(3);
+        setTargetColor(createRandomColor(colors));
+        setTimer(30);
     }
 
     useEffect(() => {
@@ -154,15 +157,6 @@ function App() {
         }
     }, [timer]);
 
-    useEffect(() => {
-        if (targetColor.size === 0) {
-            setTargetColor(new Map([
-                ["C10", colors.get("C10")!],
-                ["M30", colors.get("M30")!],
-                ["Y60", colors.get("Y60")!]
-            ]));
-        }
-    }, [targetColor]);
 
     return (
         <div className="flex bg-gray-100 font-poppins h-screen">
@@ -175,29 +169,45 @@ function App() {
                         <div className="color-display">
                             <h2 className="text-2xl font-semibold text-center pb-3">Ziel-Farbe</h2>
                             <div className="color-swatch target-color">
-                                <div
-                                    className="color-card w-36 h-36 border-4 rounded-xl transition-colors duration-1000 ease-in-out"
-                                    style={{borderColor: `color-mix(in srgb, ${calculateHex(targetColor)} 100%, black 50%)`,
-                                            backgroundColor: `${calculateHex(targetColor)}`}}
-                                    onClick={() => chooseRandomColor()}
-                                ></div>
+                                {targetColor.size > 0 ? (
+                                    <div
+                                        className="color-card w-36 h-36 border-4 rounded-xl transition-colors duration-1000 ease-in-out"
+                                        style={{
+                                            borderColor: `color-mix(in srgb, ${calculateHex(targetColor)} 100%, black 50%)`,
+                                            backgroundColor: `${calculateHex(targetColor)}`
+                                        }}
+                                    ></div>
+                                ) : (
+                                    <div
+                                        className="color-card w-36 h-36 border-4 rounded-xl bg-gray-300 border-gray-400 flex items-center justify-center text-gray-500 text-lg"
+                                    >
+                                    </div>
+                                )}
                             </div>
                         </div>
-                        <div>{
-                            <div className="timer-display flex flex-col items-center">
+                        <div>
+                            <div
+                                className={`timer-display flex flex-col items-center cursor-pointer`}
+                                onClick={() => chooseRandomColor()}
+                            >
                                 <h2 className="text-2xl font-semibold text-center pb-3">Zeit</h2>
-                                <div className="timer-circle w-24 h-24 border-4 rounded-full flex items-center justify-center bg-white shadow-md">
+                                <div
+                                    className={`timer-circle w-24 h-24 border-4 rounded-full flex items-center justify-center bg-white shadow-md transition-all
+                                        ${timer === 0 ? "animate-pulse ring-4 ring-blue-400" : ""}`}
+                                >
                                     <span className="text-4xl font-bold">{timer}</span>
                                 </div>
                             </div>
-                        }</div>
+                        </div>
                         <div className="color-display flex flex-col items-center">
                             <h2 className="text-2xl font-semibold text-center pb-3">Deine Mischung</h2>
                             <div className="color-swatch current-mix">
                                 <div
                                     className="color-card w-36 h-36 border-4 rounded-xl transition-colors duration-1000 ease-in-out"
-                                    style={{borderColor: `color-mix(in srgb, ${calculateHex(currentMix)} 100%, black 50%)`,
-                                            backgroundColor: `${calculateHex(currentMix)}`}}
+                                    style={{
+                                        borderColor: `color-mix(in srgb, ${calculateHex(currentMix)} 100%, black 50%)`,
+                                        backgroundColor: `${calculateHex(currentMix)}`
+                                    }}
                                 ></div>
                             </div>
                         </div>
@@ -228,7 +238,7 @@ function App() {
                 </div>
             </div>
 
-            {/* change to: flex flex-col */}
+            {/* change to "flex flex-col", when we add the chat again */}
             <div className="w-1/4 hidden bg-white border-l border-gray-300 shadow-lg">
 
                 <div className="p-5 border-b border-gray-200 bg-gray-50">
