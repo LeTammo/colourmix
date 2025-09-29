@@ -31,11 +31,7 @@ function App() {
     const [msg, setMsg] = useState("");
     const [chat, setChat] = useState<string[]>([]);
     const chatEndRef = useRef<HTMLDivElement | null>(null);
-    const [targetColor, setTargetColor] = useState(new Map([
-        ["C10", colors.get("C10")],
-        ["M30", colors.get("M30")],
-        ["Y60", colors.get("Y60")]
-    ]));
+    const [targetColor, setTargetColor] = useState<Map<string, number[]>>(new Map());
     const [currentMix, setCurrentMix] = useState(new Map<string, number[]>());
     const [selection, setSelection] = useState(new Map<string, number[]>());
     const [maxSelection] = useState(4);
@@ -157,6 +153,16 @@ function App() {
             return () => clearInterval(interval);
         }
     }, [timer]);
+
+    useEffect(() => {
+        if (targetColor.size === 0) {
+            setTargetColor(new Map([
+                ["C10", colors.get("C10")!],
+                ["M30", colors.get("M30")!],
+                ["Y60", colors.get("Y60")!]
+            ]));
+        }
+    }, [targetColor]);
 
     return (
         <div className="flex bg-gray-100 font-poppins h-screen">
