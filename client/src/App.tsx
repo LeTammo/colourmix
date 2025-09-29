@@ -42,6 +42,15 @@ function createRandomColor(colors: Map<string, number[]>): Map<string, number[]>
     return colorSet;
 }
 
+function StartPlayingIcon() {
+    return (
+        <svg width="100" height="100" viewBox="0 0 40 40" fill="none" aria-label="Start playing">
+            <circle cx="20" cy="20" r="18" stroke="#000" strokeWidth="2" fill="#fff"/>
+            <polygon points="16,13 28,20 16,27" fill="#000"/>
+        </svg>
+    );
+}
+
 function App() {
     const [msg, setMsg] = useState("");
     const [chat, setChat] = useState<string[]>([]);
@@ -50,7 +59,7 @@ function App() {
     const [currentMix, setCurrentMix] = useState(new Map<string, number[]>());
     const [selection, setSelection] = useState(new Map<string, number[]>());
     const [maxSelection] = useState(4);
-    const [timer, setTimer] = useState(0);
+    const [timer, setTimer] = useState(-1);
 
     function calculateHex(cmyk: Map<string, number[]>): string {
         const [c, m, y, k] = calculateColor(cmyk);
@@ -134,7 +143,7 @@ function App() {
 
     const chooseRandomColor = () => {
         setTargetColor(createRandomColor(colors));
-        setTimer(30);
+        setTimer(20);
     }
 
     useEffect(() => {
@@ -193,9 +202,11 @@ function App() {
                                 <h2 className="text-2xl font-semibold text-center pb-3">Zeit</h2>
                                 <div
                                     className={`timer-circle w-24 h-24 border-4 rounded-full flex items-center justify-center bg-white shadow-md transition-all
-                                        ${timer === 0 ? "animate-pulse ring-4 ring-blue-400" : ""}`}
+                                        ${timer <= 0 ? "animate-pulse ring-4 ring-blue-400" : ""}`}
                                 >
-                                    <span className="text-4xl font-bold">{timer}</span>
+                                    <span className="text-4xl font-bold">
+                                        {timer === -1 ? <StartPlayingIcon /> : timer}
+                                    </span>
                                 </div>
                             </div>
                         </div>
