@@ -3,24 +3,34 @@ import { io } from "socket.io-client";
 
 const socket = io("http://localhost:3000");
 
+type ColorData = {
+    name: string;
+    color: number[];
+};
+
 function App() {
     const [msg, setMsg] = useState("");
     const [chat, setChat] = useState<string[]>([]);
     const chatEndRef = useRef<HTMLDivElement | null>(null);
-    const colors = [
-        {name: "C20", color: [0.2, 0, 0, 0]},
-        {name: "C50", color: [0.5, 0, 0, 0]},
-        {name: "C70", color: [0.7, 0, 0, 0]},
-        {name: "M20", color: [0, 0.2, 0, 0]},
-        {name: "M50", color: [0, 0.5, 0, 0]},
-        {name: "M70", color: [0, 0.7, 0, 0]},
-        {name: "Y20", color: [0, 0, 0.2, 0]},
-        {name: "Y50", color: [0, 0, 0.5, 0]},
-        {name: "Y70", color: [0, 0, 0.7, 0]},
-        {name: "K20", color: [0, 0, 0, 0.2]},
-        {name: "K50", color: [0, 0, 0, 0.5]},
-        {name: "K70", color: [0, 0, 0, 0.7]},
-    ]
+    const [targetColor, setTargetColor] = useState([0.3, 0.6, 0.7, 0]);
+    const [currentMix, setCurrentMix] = useState([0, 0, 0, 0]);
+    const [selection, setSelection] = useState(new Map<string, number>());
+    const [maxSelection] = useState(4);
+
+    const colors: ColorData[] = [
+        {name: "C10", color: [0.1, 0, 0, 0]},
+        {name: "C30", color: [0.3, 0, 0, 0]},
+        {name: "C60", color: [0.6, 0, 0, 0]},
+        {name: "M10", color: [0, 0.1, 0, 0]},
+        {name: "M30", color: [0, 0.3, 0, 0]},
+        {name: "M60", color: [0, 0.6, 0, 0]},
+        {name: "Y10", color: [0, 0, 0.1, 0]},
+        {name: "Y30", color: [0, 0, 0.3, 0]},
+        {name: "Y60", color: [0, 0, 0.6, 0]},
+        {name: "K10", color: [0, 0, 0, 0.1]},
+        {name: "K30", color: [0, 0, 0, 0.3]},
+        {name: "K60", color: [0, 0, 0, 0.6]},
+    ];
 
     function cmykToRgbAndHex([c, m, y, k]: number[]): string {
         let r = 255 * (1 - c) * (1 - k);
@@ -32,10 +42,8 @@ function App() {
         b = Math.round(b);
 
         const toHex = (colorValue: number) => colorValue.toString(16).padStart(2, '0');
-
         const hex = `#${toHex(r)}${toHex(g)}${toHex(b)}ff`;
-
-        return hex.toUpperCase()
+        return hex.toUpperCase();
     }
 
     useEffect(() => {
@@ -46,9 +54,7 @@ function App() {
         const onChatMessage = (incoming: string) => {
             setChat((prevChat) => [...prevChat, incoming]);
         };
-
         socket.on("chat message", onChatMessage);
-
         return () => {
             socket.off("chat message", onChatMessage);
         };
@@ -60,6 +66,39 @@ function App() {
             socket.emit("chat message", msg);
             setMsg("");
         }
+    };
+
+
+    useEffect(() => {
+        const nextMix = [0, 0, 0, 0];
+
+        for (const colorName of selection.keys()) {
+            const colorData = colors.find(c => c.name === colorName);
+            if (colorData) {
+                nextMix[0] += colorData.color[0];
+                nextMix[1] += colorData.color[1];
+                nextMix[2] += colorData.color[2];
+                nextMix[3] += colorData.color[3];
+            }
+        }
+
+        setCurrentMix(nextMix);
+    }, [selection]);
+
+
+    const handleColorSelect = (selectedColor: ColorData) => {
+        const newSelection = new Map(selection);
+
+        if (newSelection.size >= maxSelection && !newSelection.has(selectedColor.name)) {
+            return;
+        }
+        if (newSelection.has(selectedColor.name)) {
+            newSelection.delete(selectedColor.name);
+        } else {
+            newSelection.set(selectedColor.name, 1);
+        }
+
+        setSelection(newSelection);
     };
 
     return (
@@ -74,42 +113,68 @@ function App() {
                             <h2 className="text-2xl font-semibold text-center pb-3">Ziel-Farbe</h2>
                             <div className="color-swatch target-color">
                                 <div
-                                    className="color-card w-36 h-36 border-4 rounded-xl flex items-end justify-end
-                                           cursor-pointer hover:scale-105 transition-transform"
-                                    style={{borderColor: `color-mix(in srgb, ${cmykToRgbAndHex(colors[0].color)} 100%, black 50%)`, backgroundColor: `${cmykToRgbAndHex(colors[0].color)}`}}
-                                    data-color={colors[0].name}
+                                    className="color-card w-36 h-36 border-4 rounded-xl transition-colors duration-1000 ease-in-out"
+                                    style={{borderColor: `color-mix(in srgb, ${cmykToRgbAndHex(targetColor)} 100%, black 50%)`,
+                                            backgroundColor: `${cmykToRgbAndHex(targetColor)}`}}
+                                    onClick={() => {
+                                        const randomColor = [];
+                                        const colorSet = new Set<number[]>();
+                                        const colorNameSet = new Set<string>();
+                                        const numColors = Math.floor(Math.random() * 3) + 2;
+
+                                        while (colorSet.size < numColors) {
+                                            const randomIndex = Math.floor(Math.random() * colors.length);
+                                            colorSet.add(colors[randomIndex].color);
+                                            colorNameSet.add(colors[randomIndex].name);
+                                        }
+
+                                        console.log("combined: ")
+                                        Array.from(colorNameSet).forEach(c => console.log(c));
+
+                                        for (const color of colorSet) {
+                                            randomColor[0] = (randomColor[0] || 0) + color[0];
+                                            randomColor[1] = (randomColor[1] || 0) + color[1];
+                                            randomColor[2] = (randomColor[2] || 0) + color[2];
+                                            randomColor[3] = (randomColor[3] || 0) + color[3];
+                                        }
+
+                                        setTargetColor(randomColor);
+                                    }}
                                 ></div>
                             </div>
                         </div>
-                        <div className="color-display">
+                        <div className="color-display flex flex-col items-center">
                             <h2 className="text-2xl font-semibold text-center pb-3">Deine Mischung</h2>
                             <div className="color-swatch current-mix">
                                 <div
-                                    className="color-card w-36 h-36 border-4 rounded-xl flex items-end justify-end
-                                           cursor-pointer hover:scale-105 transition-transform"
-                                    style={{borderColor: `color-mix(in srgb, ${cmykToRgbAndHex(colors[0].color)} 100%, black 50%)`, backgroundColor: `${cmykToRgbAndHex(colors[0].color)}`}}
-                                    data-color={colors[0].name}
+                                    className="color-card w-36 h-36 border-4 rounded-xl transition-colors duration-1000 ease-in-out"
+                                    style={{borderColor: `color-mix(in srgb, ${cmykToRgbAndHex(currentMix)} 100%, black 50%)`,
+                                            backgroundColor: `${cmykToRgbAndHex(currentMix)}`}}
                                 ></div>
                             </div>
                         </div>
                     </section>
 
                     <main className="palette-section grid grid-cols-6 gap-4">
-                        {colors.map((c) => (
-                            <div
-                                key={c.name}
-                                className="color-card w-30 h-40 border-4 rounded-xl flex items-end justify-end
-                                           cursor-pointer hover:scale-105 transition-transform"
-                                style={{borderColor: `color-mix(in srgb, ${cmykToRgbAndHex(c.color)} 100%, black 50%)`, backgroundColor: `${cmykToRgbAndHex(c.color)}`}}
-                                data-color={c.name}
-                            >
-                                <div className="card-text p-2 font-bold text-white text-shadow-test">{c.name}</div>
-                            </div>
-                        ))}
+                        {colors.map((c) => {
+                            const isSelected = selection.has(c.name);
+                            return (
+                                <div
+                                    key={c.name}
+                                    onClick={() => handleColorSelect(c)}
+                                    className={`color-card w-30 h-40 border-4 rounded-xl flex items-end justify-end
+                                           cursor-pointer hover:scale-105 transition-transform
+                                           ${isSelected ? 'ring-4 ring-offset-2 ring-blue-500' : ''}`}
+                                    style={{borderColor: `color-mix(in srgb, ${cmykToRgbAndHex(c.color)} 100%, black 50%)`, backgroundColor: `${cmykToRgbAndHex(c.color)}`}}
+                                    data-color={c.name}
+                                >
+                                    <div className="card-text p-2 font-bold text-white text-shadow-test">{c.name}</div>
+                                </div>
+                            );
+                        })}
                     </main>
 
                     <footer className="controls-section">
-
                     </footer>
 
                 </div>
