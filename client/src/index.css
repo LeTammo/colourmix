@@ -1,1 +1,13 @@
+@import url("https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap");
 @import "tailwindcss";
+
+@theme {
+    --font-poppins: 'Poppins', sans-serif;
+
+}
+
+@layer components {
+    .text-shadow-test {
+        text-shadow: 1px 1px 0 #0005, -1px 1px 0 #0005, -1px -1px 0 #0005, 1px -1px 0 #0005, 0 0 1px #0005;
+    }
+}
