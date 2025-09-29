@@ -64,7 +64,7 @@ function App() {
             const color = calculateHex(new Map([[name, arr]]));
             return { name, arr, color };
         });
-    }, [colors]);
+    }, []);
 
     const targetColorHex = useMemo(() => calculateHex(targetColor), [targetColor]);
     const mixedColorHex = useMemo(() => calculateHex(currentMix), [currentMix]);
