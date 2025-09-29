@@ -1,0 +1,10 @@
+# server
+server/node_modules
+server/db/*.sqlite
+
+# client
+client/node_modules
+client/build
+
+# env and other files
+.idea
