@@ -1,16 +1,50 @@
 # Colour Mix
 
-## Einleitung
+## Introduction
 
-## Spielen
+Description will be here
 
-### Variante 1: Direkt im Browser spielen
+## Development
 
-Du kannst das Spiel unter [https://colourmix.mathia.xyz/](https://colourmix.mathia.xyz/) spielen.
+### Requirements
 
-### Variante 2: Eigenen Server hosten
+- Node.js
+- npm
+- git
 
-#### Voraussetzungen
+### Installation
+
+1. Clone the repository:
+
+```bash
+git clone https://github.com/LeTammo/colourmix.git
+```
+
+2. Go into the client directory, install, and start the client in development mode:
+
+```bash
+cd colourmix/client
+npm install
+npm run dev
+```
+
+3. Go into the server directory, install, and start the server:
+
+```bash
+cd colourmix/server
+npm install
+npm start
+```
+
+## How to Play
+
+### Playing Online
+
+You can play the game at [https://colourmix.mathia.xyz/](https://colourmix.mathia.xyz/).
+
+### Option 2: Host your own server
+
+#### Requirements
 
 - Node.js
 - npm
@@ -18,28 +52,28 @@ Du kannst das Spiel unter [https://colourmix.mathia.xyz/](https://colourmix.math
 
 #### Installation
 
-1. Repository klonen:
+1. Clone the repository:
 
-    ```bash
-    git clone https://github.com/LeTammo/colourmix.git
-    ```
+```bash
+git clone https://github.com/LeTammo/colourmix.git
+```
 
-2. In das Client-Verzeichnis wechseln und installieren:
+2. Change to the client directory, install, and build the client:
 
-    ```bash
-    cd colourmix/client
-    npm install
-    npm run build
-    ```
+```bash
+cd colourmix/client
+npm install
+npm run build
+```
 
-3. In das Server-Verzeichnis wechseln, installieren und den Server starten:
+3. Change to the server directory, install, and start the server:
 
-    ```bash
-    cd ../server
-    npm install
-    npm start
-    ```
+```bash
+cd ../server
+npm install
+npm start
+```
 
 ---
 
-Viel Spaß beim Spielen!
+Have fun playing!
