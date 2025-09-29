@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import StartGameIcon from "./components/StartGameIcon.tsx";
-import Chat from "./components/Chat.tsx";
+// import Chat from "./components/Chat.tsx";
 import {
     colors,
     createRandomColor,
