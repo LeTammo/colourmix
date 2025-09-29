@@ -1,3 +1,6 @@
+import { MIN_SELECTION_COUNT, MAX_SELECTION_COUNT } from "./constants";
+
+
 type ColorData = {
     name: string;
     color: number[];
@@ -30,9 +33,12 @@ export function createRandomColor(colors: Map<string, number[]>): Map<string, nu
         [keys[i], keys[j]] = [keys[j], keys[i]];
     }
 
-    const numColors = 2 + Math.floor(Math.random() * 3);
+    // Random number between MIN_SELECTION_COUNT and MAX_SELECTION_COUNT
+    const numColors = MIN_SELECTION_COUNT + Math.floor(Math.random() * (MAX_SELECTION_COUNT - MIN_SELECTION_COUNT + 1));
+
     const chosen = keys.slice(0, numColors);
     console.log(chosen);
+
     return new Map(chosen.map(k => [k, colors.get(k)!]));
 }
 

@@ -1,4 +1,5 @@
 import { useEffect, useState, useMemo } from "react";
+import { MAX_SELECTION_COUNT, ROUND_TIME_IN_SEC } from "./lib/constants";
 import { colors, createRandomColor, calculateHex } from "./lib/color";
 // import Chat from "./components/Chat.tsx";
 import StartGameIcon from "./components/StartGameIcon.tsx";
@@ -8,20 +9,23 @@ function App() {
     const [targetColor, setTargetColor] = useState<Map<string, number[]>>(new Map());
     const [currentMix, setCurrentMix] = useState(new Map<string, number[]>());
     const [selection, setSelection] = useState(new Map<string, number[]>());
-    const [maxSelection] = useState(4);
     const [timer, setTimer] = useState(-1);
 
-    useEffect(() => {
-        const nextMix = new Map<string, number[]>();
-        for (const colorName of selection.keys()) {
-            const colorArr = colors.get(colorName);
-            if (colorArr) {
-                nextMix.set(colorName, colorArr);
-            }
+    // -1 = no game started yet
+    //  0 = game ended
+    // >0 = game running with x seconds left
+    const startNewGame = () => {
+        if (timer > 0) {
+            return;
         }
-        setCurrentMix(nextMix);
-    }, [selection]);
+        setSelection(new Map());
+        setTargetColor(createRandomColor(colors));
+        setTimer(ROUND_TIME_IN_SEC);
+    }
 
+    // If the timer is -1 or 0, nothing can be selected
+    // If the timer is >0, colors can be selected up to a count of MAX_MIXING_COUNT
+    // No duplicate colors allowed in selection
     const handleColorSelect = (selectedColor: [string, number[]]) => {
         if (timer <= 0) {
             return;
@@ -29,7 +33,7 @@ function App() {
 
         const newSelection = new Map(selection);
 
-        if (newSelection.size >= maxSelection && !newSelection.has(selectedColor[0])) {
+        if (newSelection.size >= MAX_SELECTION_COUNT && !newSelection.has(selectedColor[0])) {
             return;
         }
         if (newSelection.has(selectedColor[0])) {
@@ -41,15 +45,20 @@ function App() {
         setSelection(newSelection);
     };
 
-    const startNewGame = () => {
-        if (timer > 0) {
-            return;
+    // Whenever the selection changes, recalculate the current mix
+    useEffect(() => {
+        const nextMix = new Map<string, number[]>();
+        for (const colorName of selection.keys()) {
+            const colorArr = colors.get(colorName);
+            if (colorArr) {
+                nextMix.set(colorName, colorArr);
+            }
         }
-        setSelection(new Map());
-        setTargetColor(createRandomColor(colors));
-        setTimer(20);
-    }
+        setCurrentMix(nextMix);
+    }, [selection]);
 
+    // Round timer
+    // Decrease timer every second if it's > 0
     useEffect(() => {
         if (timer > 0) {
             const interval = setInterval(() => {
@@ -59,6 +68,8 @@ function App() {
         }
     }, [timer]);
 
+    // prepare palette colors with their hex values
+    // useMemo to avoid recalculating on every render (since colors is static, this will nuw only run once)
     const paletteColors = useMemo(() => {
         return [...colors.entries()].map(([name, arr]) => {
             const color = calculateHex(new Map([[name, arr]]));
@@ -66,6 +77,8 @@ function App() {
         });
     }, []);
 
+    // prepare hex values for targetColor and currentMix
+    // useMemo to avoid recalculating on every render (only when targetColor or currentMix changes)
     const targetColorHex = useMemo(() => calculateHex(targetColor), [targetColor]);
     const mixedColorHex = useMemo(() => calculateHex(currentMix), [currentMix]);
 
