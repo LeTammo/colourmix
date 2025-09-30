@@ -1,9 +1,10 @@
-import { useEffect, useState, useMemo } from "react";
-import { MAX_SELECTION_COUNT, ROUND_TIME_IN_SEC } from "./lib/constants";
+import { useEffect, useState, useMemo, useRef } from "react";
+import { MAX_SELECTION_COUNT, ROUND_TIME_IN_SEC, CLOCK_VOLUME} from "./lib/constants";
 import { colors, createRandomColor, calculateHex } from "./lib/color";
 // import Chat from "./components/Chat.tsx";
 import StartGameIcon from "./components/StartGameIcon.tsx";
 import Checkmark from "./components/Checkmark.tsx";
+import AudioPlayer, { type AudioPlayerHandle } from "./components/AudioPlayer";
 
 
 function App() {
@@ -11,6 +12,21 @@ function App() {
     const [currentMix, setCurrentMix] = useState(new Map<string, number[]>());
     const [selection, setSelection] = useState(new Map<string, number[]>());
     const [timer, setTimer] = useState(-1);
+
+    const soundFilePath = "clock.mp3"; // **Replace with your actual audio file path**
+    const audioPlayerRef = useRef<AudioPlayerHandle>(null); // Ref to hold the AudioPlayer instance
+
+    const handlePlaySound = () => {
+        if (audioPlayerRef.current) {
+            audioPlayerRef.current.play();
+        }
+    };
+
+    const handleStopSound = () => {
+        if (audioPlayerRef.current) {
+            audioPlayerRef.current.stop();
+        }
+    };
 
     // -1 = no game started yet
     //  0 = game ended
@@ -22,6 +38,7 @@ function App() {
         setSelection(new Map());
         setTargetColor(createRandomColor(colors));
         setTimer(ROUND_TIME_IN_SEC);
+        handlePlaySound()
     }
 
     // If the timer is -1 or 0, nothing can be selected
@@ -66,14 +83,15 @@ function App() {
                 setTimer((prev) => prev - 1);
             }, 1000);
             return () => clearInterval(interval);
-        }
+        } else if (timer === 0) {
+            handleStopSound();
+        }   
     }, [timer]);
 
     // prepare hex values for targetColor and currentMix
     // useMemo to avoid recalculating on every render (only when targetColor or currentMix changes)
     const targetColorHex = useMemo(() => calculateHex(targetColor), [targetColor]);
     const mixedColorHex = useMemo(() => calculateHex(currentMix), [currentMix]);
-
 
     type CardState = {
         name: string;
@@ -202,7 +220,9 @@ function App() {
                         })}
                     </main>
 
-                    <footer className="controls-section"></footer>
+                    <footer className="controls-section">
+                        <AudioPlayer src={soundFilePath} volume={CLOCK_VOLUME} ref={audioPlayerRef} />
+                    </footer>
                 </div>
             </div>
 
