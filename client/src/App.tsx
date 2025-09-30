@@ -94,17 +94,17 @@ function App() {
                         <div className="color-display">
                             <h2 className="text-2xl font-semibold text-center pb-3">Ziel-Farbe</h2>
                             <div className="color-swatch target-color">
-                                <div className="color-card w-36 h-36 border-2 rounded-xl transition-colors duration-1000 ease-in-out"
-                                     style={{
-                                         borderColor: `color-mix(in srgb, ${targetColorHex} 100%, black 50%)`,
-                                         backgroundColor: targetColorHex
-                                     }}
+                                <div className="color-card w-30 h-40 border-2 rounded-xl transition-colors duration-1000 ease-in-out"
+                                    style={{
+                                        borderColor: `color-mix(in srgb, ${targetColorHex} 100%, black 50%)`,
+                                        backgroundColor: targetColorHex
+                                    }}
                                 ></div>
                             </div>
                         </div>
                         <div>
                             <div className={`timer-display flex flex-col items-center cursor-pointer`}
-                                 onClick={() => startNewGame()}
+                                onClick={() => startNewGame()}
                             >
                                 <div className={`timer-circle w-24 h-24 border-4 rounded-full bg-white shadow-md
                                                 flex items-center justify-center mt-16 transition-all 
@@ -119,31 +119,34 @@ function App() {
                         <div className="color-display flex flex-col items-center">
                             <h2 className="text-2xl font-semibold text-center pb-3">Deine Mischung</h2>
                             <div className="color-swatch current-mix">
-                                <div className="color-card w-36 h-36 border-2 rounded-xl transition-colors duration-1000 ease-in-out"
-                                     style={{
-                                         borderColor: `color-mix(in srgb, ${mixedColorHex} 100%, black 50%)`,
-                                         backgroundColor: mixedColorHex
-                                     }}
+                                <div className="color-card w-30 h-40 border-2 rounded-xl transition-colors duration-1000 ease-in-out"
+                                    style={{
+                                        borderColor: `color-mix(in srgb, ${mixedColorHex} 100%, black 50%)`,
+                                        backgroundColor: mixedColorHex
+                                    }}
                                 ></div>
                             </div>
                         </div>
                     </section>
 
-                    <main className="palette-section grid grid-cols-6 gap-4">
+                    <main className="palette-section grid grid-cols-6 gap-4 mt-8">
                         {paletteColors.map((c) => {
                             const isSelected = selection.has(c.name);
                             const style = {
                                 borderColor: `color-mix(in srgb, ${c.color} 100%, black 50%)`,
                                 backgroundColor: c.color,
+                                ...(isSelected && {
+                                    outline: '3px solid #0ea5e9',
+                                    outlineOffset: '2px'
+                                })
                             };
                             return (
                                 <div key={c.name}
-                                     onClick={() => handleColorSelect([c.name, c.arr])}
-                                     className={`color-card w-30 h-40 rounded-xl flex items-end justify-end
-                                                 cursor-pointer border-2 hover:border-4 transition-transform
-                                                 ${isSelected ? 'scale-105 border-6' : ''}`}
-                                     style={style}
-                                     data-color={c.name}
+                                    onClick={() => handleColorSelect([c.name, c.arr])}
+                                    className={`color-card w-30 h-40 rounded-xl flex items-end justify-end
+                             cursor-pointer border-2 hover:scale-105 transition-transform`}
+                                    style={style}
+                                    data-color={c.name}
                                 >
                                     <div className="card-text p-2 font-bold text-white text-shadow-test">{c.name}</div>
                                 </div>
