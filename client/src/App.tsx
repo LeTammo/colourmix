@@ -189,7 +189,7 @@ function App() {
                                 style.opacity = 0.2;
                                 style.pointerEvents = 'none';
                             } else if (c.status === "selected-correct") {
-                                style.outline = '3px solid #00a63e';
+                                style.outline = '3px solid #000';
                                 style.outlineOffset = '2px';
                             } else if (c.status === "selected-wrong") {
                                 style.outline = '3px dashed gray';
@@ -206,15 +206,15 @@ function App() {
                                     style={style}
                                     data-color={c.name}
                                 >
-                                    <div>
+
                                         {c.status === "selected-correct" && (
-                                            <div className="absolute drop-shadow-md top-12 left-0 right-0 bottom-0 m-auto w-1/2">
+                                            <div className="absolute flex justify-center items-center drop-shadow-md top-0 left-0 right-0 bottom-0 m-auto">
                                                 <Checkmark />
                                             </div>
                                         )}
 
                                         <div className="card-text p-2 font-bold text-white text-shadow-test">{c.name}</div>
-                                    </div>
+
                                 </div>
                             );
                         })}
