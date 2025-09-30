@@ -105,17 +105,18 @@ function App() {
     }, [targetColor, selection, timer]);
 
     return (
-        <div className="flex bg-gray-100 font-poppins h-screen">
-            <div className="flex-grow w-3/4 flex items-center justify-center bg-gray-200">
+        <div className="flex font-poppins h-screen">
+            <div className="flex-grow w-3/4 flex items-center justify-center bg-gray-100">
                 <div className="game-container">
                     <header className="game-header text-3xl text-center font-extrabold">
                         <h1>CMYK Color Mixer</h1>
                     </header>
-                    <section className="goal-section flex justify-around my-4">
+                    <section className="goal-section flex justify-around my-4 border-2 p-8 border-gray-400 rounded-2xl
+                                        shadow-lg bg-white items-center">
                         <div className="color-display">
-                            <h2 className="text-2xl font-semibold text-center pb-3">Ziel-Farbe</h2>
+                            <h2 className="text-2xl font-semibold text-center pb-3">Zielfarbe</h2>
                             <div className="color-swatch target-color">
-                                <div className="color-card w-30 h-40 border-2 rounded-xl transition-colors duration-1000 ease-in-out"
+                                <div className="color-card w-45 h-60 border-2 rounded-xl transition-colors duration-1000 ease-in-out"
                                     style={{
                                         borderColor: `color-mix(in srgb, ${targetColorHex} 100%, black 50%)`,
                                         backgroundColor: targetColorHex
@@ -128,19 +129,19 @@ function App() {
                                 onClick={() => startNewGame()}
                             >
                                 <div className={`timer-circle w-24 h-24 border-4 rounded-full bg-white shadow-md
-                                                flex items-center justify-center mt-16 transition-all 
+                                                flex items-center justify-center transition-all 
                                                 ${timer <= 0 ? "animate-pulse ring-4 ring-blue-400" : ""}`}
                                 >
                                     <span className="text-2xl font-bold">
-                                        {timer === -1 ? <StartGameIcon /> : "00:" + timer.toString().padStart(2, "0")}
+                                        {timer <= 0 ? <StartGameIcon /> : "00:" + timer.toString().padStart(2, "0")}
                                     </span>
                                 </div>
                             </div>
                         </div>
                         <div className="color-display flex flex-col items-center">
-                            <h2 className="text-2xl font-semibold text-center pb-3">Deine Mischung</h2>
+                            <h2 className="text-2xl font-semibold text-center pb-3">Dein Mix</h2>
                             <div className="color-swatch current-mix">
-                                <div className="color-card w-30 h-40 border-2 rounded-xl transition-colors duration-1000 ease-in-out"
+                                <div className="color-card w-45 h-60 border-2 rounded-xl transition-colors duration-1000 ease-in-out"
                                     style={{
                                         borderColor: `color-mix(in srgb, ${mixedColorHex} 100%, black 50%)`,
                                         backgroundColor: mixedColorHex
@@ -150,7 +151,8 @@ function App() {
                         </div>
                     </section>
 
-                    <main className="palette-section grid grid-cols-6 gap-4 mt-8">
+                    <main className="palette-section grid grid-cols-6 gap-4 mt-8 border-2 p-4 border-gray-400 rounded-2xl
+                                     shadow-lg bg-white">
                         {cardStates.map((c) => {
                             const style: React.CSSProperties = {
                                 borderColor: `color-mix(in srgb, ${c.color} 100%, black 50%)`,
