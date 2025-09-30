@@ -4,7 +4,6 @@ import { colors, createRandomColor, calculateHex } from "./lib/color";
 // import Chat from "./components/Chat.tsx";
 import StartGameIcon from "./components/StartGameIcon.tsx";
 import Checkmark from "./components/Checkmark.tsx";
-import X from "./components/X.tsx";
 
 
 function App() {
@@ -132,8 +131,8 @@ function App() {
                                                 flex items-center justify-center mt-16 transition-all 
                                                 ${timer <= 0 ? "animate-pulse ring-4 ring-blue-400" : ""}`}
                                 >
-                                    <span className="text-4xl font-bold">
-                                        {timer === -1 ? <StartGameIcon /> : timer}
+                                    <span className="text-2xl font-bold">
+                                        {timer === -1 ? <StartGameIcon /> : "00:" + timer.toString().padStart(2, "0")}
                                     </span>
                                 </div>
                             </div>
@@ -162,12 +161,12 @@ function App() {
                                 style.outline = '3px solid #0ea5e9';
                                 style.outlineOffset = '2px';
                             } else if (c.status === "inactive-selected") {
-                                style.opacity = 0.3;
+                                style.opacity = 0.2;
                                 style.pointerEvents = 'none';
                                 style.outline = '3px solid #94a3b8';
                                 style.outlineOffset = '2px';
                             } else if (c.status === "inactive") {
-                                style.opacity = 0.3;
+                                style.opacity = 0.2;
                                 style.pointerEvents = 'none';
                             } else if (c.status === "selected-correct") {
                                 style.outline = '3px solid #00a63e';
