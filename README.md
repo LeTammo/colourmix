@@ -8,11 +8,11 @@ Description will be here
 
 ### Requirements
 
-- Node.js
+- Node.js (22+)
 - npm
 - git
 
-### Installation
+### Installation (Development)
 
 1. Clone the repository:
 
@@ -31,9 +31,9 @@ npm run dev
 3. Go into the server directory, install, and start the server:
 
 ```bash
-cd colourmix/server
+cd ../server
 npm install
-npm start
+npm run dev
 ```
 
 ## How to Play
@@ -46,7 +46,7 @@ You can play the game at [https://colourmix.mathia.xyz/](https://colourmix.mathi
 
 #### Requirements
 
-- Node.js
+- Node.js (22+)
 - npm
 - git
 
@@ -71,7 +71,7 @@ npm run build
 ```bash
 cd ../server
 npm install
-npm start
+npm run build
 ```
 
 ---
