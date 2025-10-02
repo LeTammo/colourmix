@@ -1,11 +1,11 @@
-import React, {useState, useRef, useEffect} from "react";
-import { io } from "socket.io-client";
-
-const socket = io("http://localhost:3000");
+import React, { useState, useRef, useEffect } from "react";
+import { ChatOutgoingMessage } from "../../../server/src/models/messages";
+import { useSocket } from "../lib/socket";
 
 function Chat() {
     const chatEndRef = useRef<HTMLDivElement | null>(null);
-    const [chat, setChat] = useState<string[]>([]);
+    const { socket, isConnected } = useSocket();
+    const [chat, setChat] = useState<ChatOutgoingMessage[]>([]);
     const [msg, setMsg] = useState("");
 
     useEffect(() => {
@@ -13,25 +13,34 @@ function Chat() {
     }, [chat]);
 
     useEffect(() => {
-        const onChatMessage = (incoming: string) => {
+        const onGameMessage = (incoming: any) => {
+            // Log incoming message for debugging
+            console.log("Received message:", incoming);
+
+            // Ensure the message is of type ChatOutgoingMessage
+            if (incoming.type !== "CHAT") return;
+
             setChat((prevChat) => [...prevChat, incoming]);
         };
-        socket.on("chat message", onChatMessage);
+        socket.on("game_message", onGameMessage);
         return () => {
-            socket.off("chat message", onChatMessage);
+            socket.off("game_message", onGameMessage);
         };
-    }, []);
+    }, [socket]);
 
     const sendMessage = (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         if (msg.trim()) {
-            socket.emit("chat message", msg);
+            socket.emit("game_message", {
+                type: "CHAT",
+                content: msg
+            });
             setMsg("");
         }
     };
 
     return (
-        <div className="w-1/4 flex flex-col bg-white border-l border-gray-300 shadow-lg">
+        <div className="flex flex-col bg-white border-l border-gray-300 shadow-lg">
 
             <div className="p-5 border-b border-gray-200 bg-gray-50">
                 <h2 className="text-xl font-semibold text-gray-800">Chat</h2>
@@ -40,10 +49,11 @@ function Chat() {
             <div className="flex-grow overflow-y-auto p-5">
                 <ul className="space-y-3">
                     {chat.map((c, i) => (
-                        <li key={i}
+                        <><div>{c.username}:</div><li key={i}
                             className="p-2 px-3 bg-blue-100 text-gray-800 rounded-lg max-w-[85%] break-words">
-                            {c}
+                            {c.content}
                         </li>
+                        </>
                     ))}
                 </ul>
                 <div ref={chatEndRef} />
@@ -53,12 +63,14 @@ function Chat() {
                 <input
                     className="flex-grow p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     value={msg}
+                    disabled={!isConnected}
                     onChange={(e) => setMsg(e.target.value)}
                     placeholder="Type a message..."
                 />
                 <button
                     type="submit"
-                    className="ml-3 py-2 px-4 bg-blue-600 text-white font-semibold rounded-md hover:bg-blue-700 transition-colors"
+                    disabled={!msg.trim() || !isConnected}
+                    className="disabled:bg-gray-300 ml-3 py-2 px-4 bg-blue-600 text-white font-semibold rounded-md hover:bg-blue-700 transition-colors"
                 >
                     Send
                 </button>

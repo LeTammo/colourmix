@@ -2,7 +2,8 @@ import express from "express";
 import { createServer } from "http";
 import { Server } from "socket.io";
 import cors from "cors";
-
+import { Game } from "./services/gamestate.service";
+import cookieParser from "cookie-parser";
 
 const app = express()
 const server = createServer(app);
@@ -10,27 +11,28 @@ const server = createServer(app);
 const io = new Server(server, {
     cors: {
         origin: "http://localhost:5173",
-        methods: ["GET", "POST"]
+        methods: ["GET", "POST"],
+        credentials: true
     }
 });
 
 app.use(cors());
-app.get("/", (req, res) => {
-    res.send("Server is running 🚀");
-}); 
+app.use(cookieParser());
 
-io.on("connection", (socket) => {
-    console.log("Client connected:", socket.id);
-
-    socket.on("chat message", (data) => {
-        console.log("Message:", data);
-        io.emit("chat message", data);
+app.get('/login', (req, res) => {
+  // Set cookie via HTTP response
+  if (!req.cookies.playerId) {
+    const playerId = crypto.randomUUID();
+    res.cookie('playerId', playerId, {
+      maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+      httpOnly: true
     });
-
-    socket.on("disconnect", () => {
-        console.log("Client disconnected:", socket.id);
-    });
+  }
+  
+  res.send("Logged in");
 });
+
+const game = new Game(io);
 
 const PORT = 3000;
 server.listen(PORT, () => console.log(`Server running on port ${PORT}`));

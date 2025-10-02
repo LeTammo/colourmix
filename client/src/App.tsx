@@ -1,17 +1,26 @@
 import { useEffect, useState, useMemo, useRef } from "react";
-import { MAX_SELECTION_COUNT, ROUND_TIME_IN_SEC, CLOCK_VOLUME} from "./lib/constants";
-import { colors, createRandomColor, calculateHex } from "./lib/color";
+import { MAX_SELECTION_COUNT, ROUND_TIME_IN_SECONDS, CLOCK_VOLUME } from "./lib/constants";
+import { colors, createRandomColor, calculateHex, type CMYKColor, type Card } from "./lib/color";
 // import Chat from "./components/Chat.tsx";
 import StartGameIcon from "./components/StartGameIcon.tsx";
 import Checkmark from "./components/Checkmark.tsx";
 import AudioPlayer, { type AudioPlayerHandle } from "./components/AudioPlayer";
+import Chat from "./components/Chat.tsx";
+import ToastMessage from "./components/ToastMessage.tsx"
+import { socket } from "./lib/socket.ts";
+import type { StatusOutgoingMessage } from "../../server/src/models/messages.ts";
 
 
 function App() {
-    const [targetColor, setTargetColor] = useState<Map<string, number[]>>(new Map());
-    const [currentMix, setCurrentMix] = useState(new Map<string, number[]>());
-    const [selection, setSelection] = useState(new Map<string, number[]>());
+    const [targetColor, setTargetColor] = useState<Map<Card, CMYKColor>>(new Map());
+    const [currentMix, setCurrentMix] = useState(new Map<Card, CMYKColor>());
+    const [selection, setSelection] = useState(new Map<Card, CMYKColor>());
     const [timer, setTimer] = useState(-1);
+    const [statusMessages, setStatusMessages] = useState<StatusOutgoingMessage[]>([]);
+
+    const removeMessage = (id: string) => {
+        setStatusMessages((msgs) => msgs.filter((msg) => msg.id !== id));
+    };
 
     const soundFilePath = "clock.mp3"; // **Replace with your actual audio file path**
     const audioPlayerRef = useRef<AudioPlayerHandle>(null); // Ref to hold the AudioPlayer instance
@@ -37,14 +46,14 @@ function App() {
         }
         setSelection(new Map());
         setTargetColor(createRandomColor(colors));
-        setTimer(ROUND_TIME_IN_SEC);
+        setTimer(ROUND_TIME_IN_SECONDS);
         handlePlaySound()
     }
 
     // If the timer is -1 or 0, nothing can be selected
     // If the timer is >0, colors can be selected up to a count of MAX_MIXING_COUNT
     // No duplicate colors allowed in selection
-    const handleColorSelect = (selectedColor: [string, number[]]) => {
+    const handleColorSelect = (selectedColor: [Card, CMYKColor]) => {
         if (timer <= 0) {
             return;
         }
@@ -63,9 +72,25 @@ function App() {
         setSelection(newSelection);
     };
 
+    useEffect(() => {
+        socket.on("game_message", onGameMessage);
+        return () => {
+            socket.off("game_message", onGameMessage);
+        };
+    }, [socket]);
+
+    const onGameMessage = (message: StatusOutgoingMessage) => {
+        console.log("Received game message:", message); // Debug log
+
+        if (message.type === "ERROR" || message.type === "SUCCESS") {
+            setStatusMessages((msgs) => [...msgs, message]);
+        }
+        // Handle other message types as needed
+    }
+
     // Whenever the selection changes, recalculate the current mix
     useEffect(() => {
-        const nextMix = new Map<string, number[]>();
+        const nextMix = new Map<Card, CMYKColor>();
         for (const colorName of selection.keys()) {
             const colorArr = colors.get(colorName);
             if (colorArr) {
@@ -85,7 +110,7 @@ function App() {
             return () => clearInterval(interval);
         } else if (timer === 0) {
             handleStopSound();
-        }   
+        }
     }, [timer]);
 
     // prepare hex values for targetColor and currentMix
@@ -94,8 +119,8 @@ function App() {
     const mixedColorHex = useMemo(() => calculateHex(currentMix), [currentMix]);
 
     type CardState = {
-        name: string;
-        arr: number[];
+        name: Card;
+        arr: CMYKColor;
         color: string;
         inTarget: boolean;
         inSelection: boolean;
@@ -124,7 +149,9 @@ function App() {
 
     return (
         <div className="flex font-poppins h-screen">
-            <div className="flex-grow w-3/4 flex items-center justify-center bg-gray-100">
+            <div className="flex-grow w-3/4 flex relative items-center justify-center bg-gray-100">
+                <ToastMessage messages={statusMessages} onRemove={(id) => removeMessage(id)} />
+
                 <div className="game-container">
                     <header className="game-header text-3xl text-center font-extrabold">
                         <h1>CMYK Color Mixer</h1>
@@ -134,7 +161,7 @@ function App() {
                         <div className="color-display">
                             <h2 className="text-2xl font-semibold text-center pb-3">Zielfarbe</h2>
                             <div className="color-swatch target-color">
-                                <div className="color-card w-45 h-60 border-2 rounded-xl transition-colors duration-1000 ease-in-out"
+                                <div className="color-card w-45 h-60 border-3 rounded-xl transition-colors duration-1000 ease-in-out"
                                     style={{
                                         borderColor: `color-mix(in srgb, ${targetColorHex} 100%, black 50%)`,
                                         backgroundColor: targetColorHex
@@ -159,7 +186,7 @@ function App() {
                         <div className="color-display flex flex-col items-center">
                             <h2 className="text-2xl font-semibold text-center pb-3">Dein Mix</h2>
                             <div className="color-swatch current-mix">
-                                <div className="color-card w-45 h-60 border-2 rounded-xl transition-colors duration-1000 ease-in-out"
+                                <div className="color-card w-45 h-60 border-3 rounded-xl transition-colors duration-1000 ease-in-out"
                                     style={{
                                         borderColor: `color-mix(in srgb, ${mixedColorHex} 100%, black 50%)`,
                                         backgroundColor: mixedColorHex
@@ -207,13 +234,13 @@ function App() {
                                     data-color={c.name}
                                 >
 
-                                        {c.status === "selected-correct" && (
-                                            <div className="absolute flex justify-center items-center drop-shadow-md top-0 left-0 right-0 bottom-0 m-auto">
-                                                <Checkmark />
-                                            </div>
-                                        )}
+                                    {c.status === "selected-correct" && (
+                                        <div className="absolute flex justify-center items-center drop-shadow-md top-0 left-0 right-0 bottom-0 m-auto">
+                                            <Checkmark />
+                                        </div>
+                                    )}
 
-                                        <div className="card-text p-2 font-bold text-white text-shadow-test">{c.name}</div>
+                                    <div className="card-text p-2 font-bold text-white text-shadow-test">{c.name}</div>
 
                                 </div>
                             );
@@ -225,8 +252,7 @@ function App() {
                     </footer>
                 </div>
             </div>
-
-            {/* <Chat /> @TODO uncomment when used again */}
+            <Chat />
         </div>
     );
 }
