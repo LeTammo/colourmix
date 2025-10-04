@@ -1,8 +1,8 @@
 import React, { useState, useRef, useEffect } from "react";
-import { ChatOutgoingMessage } from "../../../server/src/models/messages";
+import { ChatOutgoingMessage, GameStateOutgoingMessage, OutgoingMessage } from "../../../server/src/models/messages";
 import { useSocket } from "../lib/socket";
 
-function Chat() {
+function Chat({players}: {players: GameStateOutgoingMessage["gameState"]["players"] | undefined}) {
     const chatEndRef = useRef<HTMLDivElement | null>(null);
     const { socket, isConnected } = useSocket();
     const [chat, setChat] = useState<ChatOutgoingMessage[]>([]);
@@ -13,15 +13,15 @@ function Chat() {
     }, [chat]);
 
     useEffect(() => {
-        const onGameMessage = (incoming: any) => {
-            // Log incoming message for debugging
-            console.log("Received message:", incoming);
-
+        const onGameMessage = (incoming: OutgoingMessage) => {
             // Ensure the message is of type ChatOutgoingMessage
             if (incoming.type !== "CHAT") return;
-
-            setChat((prevChat) => [...prevChat, incoming]);
+            
+            console.log("Received chat message:", incoming);
+            
+            setChat((prevChat) => [...prevChat, incoming as ChatOutgoingMessage]);
         };
+
         socket.on("game_message", onGameMessage);
         return () => {
             socket.off("game_message", onGameMessage);
@@ -41,8 +41,22 @@ function Chat() {
 
     return (
         <div className="flex flex-col bg-white border-l border-gray-300 shadow-lg">
-
             <div className="p-5 border-b border-gray-200 bg-gray-50">
+                <h2 className="text-xl font-semibold text-gray-800">Game</h2>
+            </div>
+
+            {players && <div className="overflow-y-auto">
+                <ul className="text-gray-800">
+                    {(Array.from(Object.entries(players as Record<string, GameStateOutgoingMessage["gameState"]["players"][string]>))?.sort((a, b) => b[1].score - a[1].score).map(([id, p], i) => (
+                        <li key={id} className="flex">
+                            <div className={`flex-grow border-r border-gray-200 pl-5 py-2 text-md  ${i > 0 ? "border-t": ""}`}>{p.name} <span title="Host">{p.isHost ? "👑" : ""}</span></div>
+                            <div className={`text-center w-30 border-blue-200 bg-blue-100 p-2 text-md  ${i > 0 ? "border-t": ""}`}>{p.score}</div>
+                        </li>
+                    )))}
+                </ul>
+            </div>}
+
+            <div className="p-5 border-b border-t border-gray-200 bg-gray-50">
                 <h2 className="text-xl font-semibold text-gray-800">Chat</h2>
             </div>
 

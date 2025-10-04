@@ -26,21 +26,26 @@ export interface CardsPickedIncomingMessage extends IncomingMessage {
 //-------------------------------------------------------------
 
 export interface GameStateOutgoing {
-    players: { id: string; name: string; score: number }[];
+    players: {[id: string]: {  
+        isHost: boolean; 
+        name: string; 
+        score: number; 
+    }};
     timer: number;
     round: number;
     maxRounds: number;
     rounds: {
         picks: { [playerId: string]: Card[] };
         targetCards: Card[] | null;
-        targetColor: string;
+        targetCardsNumber: number;
+        targetColor: string | null;
         state: "waiting" | "playing" | "finished";
     }[];
 }
 
 export abstract class OutgoingMessage {
     id: string;
-    type: "CHAT" | "TIMER_UPDATE" | "START_ROUND" | "ROUND_END" | "GAME_STATE" | "ERROR" | "SUCCESS";
+    type: "CHAT" | "TIMER_UPDATE" | "START_ROUND" | "NEW_ROUND" | "END_ROUND" | "GAME_STATE" | "ERROR" | "SUCCESS";
     timestamp: number;
     constructor(type: OutgoingMessage["type"]) {
         this.id = crypto.randomUUID()
@@ -51,22 +56,31 @@ export abstract class OutgoingMessage {
 
 export class GameStateOutgoingMessage extends OutgoingMessage {
     gameState: GameStateOutgoing;
-    constructor(gameState: GameState) {
+    playerId: string;
+    constructor(gameState: GameState, playerId: string) {
         super("GAME_STATE");
+        this.playerId = playerId;
         this.gameState = {
-            players: gameState.players.map(p => ({ id: p.id, name: p.name, score: p.score })),
+            players: gameState.players.reduce((acc, p) => {
+                acc[p.id] = { isHost: p.isHost, name: p.name, score: p.score };
+                return acc;
+            }, {} as GameStateOutgoing["players"]),
             timer: gameState.timer,
             round: gameState.round,
             maxRounds: gameState.maxRounds,
             rounds: gameState.rounds.map(r => ({
-                picks: r.picks,
+                // Only include player picks by playerId
+                picks: r.state === "finished" ? r.picks : (r.picks[playerId] ? { [playerId]: r.picks[playerId] } : {}),
                 targetCards: r.state === "finished" ? r.targetCards : null,
-                targetColor: r.targetColor,
-                state: r.state
+                targetColor: r.state === "waiting" ? null : r.targetColor,
+                state: r.state,
+                targetCardsNumber: r.state !== "waiting" ? r.targetCards.length : 0
             }))
         }
     }
 }
+
+// TODO: PlayerJoinedOutgoingMessage, PlayerLeftOutgoingMessage, etc.
 
 export class ChatOutgoingMessage extends OutgoingMessage {
     username: string;
@@ -89,19 +103,21 @@ export class TimerUpdateOutgoingMessage extends OutgoingMessage {
 export class NewRoundOutgoingMessage extends OutgoingMessage {
     timer: number;
     round: number;
-    targetColor: string;
 
     constructor(timer: number, round: number, targetColor: string) {
-        super("START_ROUND");
+        super("NEW_ROUND");
         this.timer = timer;
         this.round = round;
-        this.targetColor = targetColor;
     }
 }
 
 export class StartRoundOutgoingMessage extends OutgoingMessage {
-    constructor() {
+    targetColor: string;
+    targetCardsNumber: number;
+    constructor(targetColor: string, targetCardsNumber: number) {
         super("START_ROUND");
+        this.targetColor = targetColor;
+        this.targetCardsNumber = targetCardsNumber;
     }
 }
 
@@ -109,7 +125,7 @@ export class EndRoundOutgoingMessage extends OutgoingMessage {
     targetCards: Card[]; // or color?
     picks: { [playerId: string]: Card[] };
     constructor(targetCards: Card[], picks: { [playerId: string]: Card[] }) {
-        super("ROUND_END");
+        super("END_ROUND");
         this.targetCards = targetCards; 
         this.picks = picks;
     }

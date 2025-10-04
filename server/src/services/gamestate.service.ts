@@ -26,6 +26,8 @@ export class Game extends EventEmitter {
     ) {
         super()
         this.initializeSocketListeners();
+        this.createNewRound();
+
     }
 
     private initializeSocketListeners() {
@@ -59,8 +61,9 @@ export class Game extends EventEmitter {
             this.addPlayer(playerId, socket.id, `Player ${this.gameState.players.length + 1}`, this.gameState.players.length === 0);
             socket.emit("game_message", new StatusOutgoingMessage("SUCCESS", "Successfully connected to the game server."));
 
-            console.log("Active players: ", this.gameState.players)
+            //console.log("Active players: ", this.gameState.players)
 
+            socket.emit("game_message", this.gameState.toGameStateOutgoingMessage(playerId));
 
             socket.on("game_message", (data) => {
 
@@ -81,7 +84,10 @@ export class Game extends EventEmitter {
     }
 
     handleMessage(socket: Socket, message: IncomingMessage) {
+        console.log("Received message from", socket.id, ":", message);
+
         switch (message.type) {
+
             case "CHAT":
                 this.handleChatMessage(socket, message as ChatIncomingMessage);
                 break;
@@ -130,51 +136,54 @@ export class Game extends EventEmitter {
             throw new Error("Player not found for socket id: " + socket.id);
         }
 
-        if (currentRound.picks[player?.id] === undefined) {
-            currentRound.picks[player?.id] = message.cards;
-            return;
-        }
+        currentRound.picks[player?.id] = message.cards;
 
         this.emit("cards_picked", this.gameState);
     }
 
     private handleNewRoundMessage(socket: Socket, message: NewRoundIncomingMessage) {
+        const player = this.getPlayerBySocketId(socket.id);
+
+        if (!player) {
+            console.error("Player not found for socket id: " + socket.id);
+            return;
+        }
+
+        if (!player?.isHost) {
+            console.warn("Only the host can start a new round.");
+            return;
+        }
+
         const previousRound = this.gameState.rounds[this.gameState.round - 1];
 
         if (previousRound === undefined) {
             if (this.gameState.round !== 0) {
-                throw new Error("Previous round not found, but round number is not zero.");
+                console.error("Previous round not found, but round number is not zero.");
+                return
             }
         } else {
             if (previousRound.state !== "finished" && this.gameState.round !== 0) {
-                throw new Error("Cannot start a new round before the previous one is finished.");
+                console.warn("Cannot start a new round before the previous one is finished.");
+                return
             }
         }
 
         if (this.gameState.round >= this.gameState.maxRounds) {
-            throw new Error("Maximum number of rounds reached.");
+            console.warn("Maximum number of rounds reached.");
+            return;
         }
 
-        const targetCards = [...createRandomColor(colors).keys().map(c => c)];
+        const newRound = this.createNewRound();
 
-        this.gameState.round += 1;
-        this.gameState.rounds.push({
-            picks: {},
-            targetCards: targetCards, // Optionally: set target cards
-            targetColor: calculateHex(targetCards),
-            state: "waiting",
-        });
-        this.gameState.timer = ROUND_TIME_IN_SECONDS;
-        const currentRound = this.gameState.rounds[this.gameState.round - 1];
-
-        if (!currentRound) {
-            throw new Error("Current round not found after starting a new round.");
+        if (!newRound) {
+            console.error("Current round not found after starting a new round.");
+            return
         }
 
         const newRoundMessage = new NewRoundOutgoingMessage(
             this.gameState.timer,
             this.gameState.round,
-            currentRound.targetColor
+            newRound.targetColor
         )
 
         this.io.emit("game_message", newRoundMessage);
@@ -183,28 +192,43 @@ export class Game extends EventEmitter {
     }
 
     private handleStartRoundMessage(socket: Socket, message: StartRoundIncomingMessage) {
+        const player = this.getPlayerBySocketId(socket.id);
+
+        if (!player) {
+            console.error("Player not found for socket id: " + socket.id);
+            return;
+        }
+
+        if (!player?.isHost) {
+            console.warn("Only the host can start the round.");
+            return;
+        }
+
         const currentRound = this.gameState.rounds[this.gameState.round - 1];
 
         if (!currentRound) {
-            throw new Error("No current round to start.");
+            console.warn("No current round to start.");
+            return
         }
 
         if (currentRound.state !== "waiting") {
-            throw new Error("Current round is not in a state to start playing.");
+            console.warn("Current round is not in a state to start playing.");
+            return
         }
 
         currentRound.state = "playing";
 
-        this.io.emit("game_message", new StartRoundOutgoingMessage());
+        this.io.emit("game_message", new StartRoundOutgoingMessage(currentRound.targetColor, currentRound.targetCards.length));
 
         // Start countdown timer
         const timerInterval = setInterval(() => {
-            if (this.gameState.timer > 0) {
+            if (this.gameState.timer > 1) {
                 this.gameState.timer -= 1;
                 this.io.emit("game_message", new TimerUpdateOutgoingMessage(this.gameState.timer));
             } else {
-                clearInterval(timerInterval);
+                this.gameState.timer = 0;
                 this.roundEnd();
+                clearInterval(timerInterval);
             }
         }, 1000);
 
@@ -216,7 +240,8 @@ export class Game extends EventEmitter {
         const currentRound = this.gameState.rounds[this.gameState.round - 1];
 
         if (!currentRound) {
-            throw new Error("No current round to end.");
+            console.warn("No current round to end.");
+            return;
         }
         currentRound.state = "finished";
 
@@ -234,6 +259,21 @@ export class Game extends EventEmitter {
         // TODO: calculate scores 
     }
 
+    createNewRound() {
+        const targetCards = [...createRandomColor(colors).keys().map(c => c)];
+
+        this.gameState.round += 1;
+        this.gameState.rounds.push({
+            picks: {},
+            targetCards: targetCards, // Optionally: set target cards
+            targetColor: calculateHex(targetCards),
+            state: "waiting",
+        });
+        this.gameState.timer = ROUND_TIME_IN_SECONDS;
+
+        return this.gameState.rounds[this.gameState.round - 1];
+    }
+
     addPlayer(playerId: string, socketId: string, name: string, isHost: boolean = false) {
         if (this.gameState.players.find(p => p.id === playerId)) {
 
@@ -247,7 +287,7 @@ export class Game extends EventEmitter {
             return;
 
         }
-        this.gameState.players.push({ id: playerId, socketId, name, score: 0, isHost});
+        this.gameState.players.push({ id: playerId, socketId, name, score: Math.floor(Math.random()*10), isHost});
     }
 
     removePlayerBySocketId(socketId: string) {

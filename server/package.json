@@ -4,9 +4,9 @@
   "description": "",
   "scripts": {
     "start": "node ./build/index.js",
-    "build": "tsc",
+    "build": "rm -rf ./build && tsc --build tsconfig.prod.json",
     "dev": "nodemon src/index.ts",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "jest"
   },
   "keywords": [],
   "author": "",
@@ -22,8 +22,11 @@
   "devDependencies": {
     "@types/cookie-parser": "^1.4.9",
     "@types/express": "^5.0.3",
+    "@types/jest": "^30.0.0",
     "@types/node": "^22.18.7",
+    "jest": "^30.2.0",
     "nodemon": "^3.1.10",
+    "ts-jest": "^29.4.4",
     "ts-node": "^10.9.2",
     "typescript": "^5.9.2"
   }

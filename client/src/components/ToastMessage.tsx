@@ -2,11 +2,10 @@ import { useEffect, useCallback, useRef } from 'react';
 import { StatusOutgoingMessage } from '../../../server/src/models/messages';
 
 /**
- * ToastMessage component for showing temporary success or error messages,
- * styled using Tailwind CSS.
+ * ToastMessage component for showing temporary success or error messages
  *
  * @param {object} props
- * @param {Array<object>} props.messages - Array of message objects: [{ id: string, type: 'success'|'error', text: string }]
+ * @param {Array<object>} props.messages - Array of StatusOutgoingMessage objects to display.
  * @param {function} props.onRemove - Callback function to remove a message by its ID.
  */
 const ToastMessage = ({ messages, onRemove }: { messages: StatusOutgoingMessage[], onRemove: (id: string) => void }) => {
@@ -72,7 +71,6 @@ const ToastMessage = ({ messages, onRemove }: { messages: StatusOutgoingMessage[
             // Light green background, green border, dark green text
             return `${base} bg-emerald-100 border border-green-400 text-green-800`;
         } else if (message.type === 'ERROR') {
-            console.log("Error toast detected");
             // Light red background, red border, dark red text
             return `${base} bg-red-100 border border-red-400 text-red-800`;
         }

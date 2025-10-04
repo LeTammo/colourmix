@@ -39,41 +39,70 @@ export function createRandomColor(colors: Map<Card, CMYKColor>): Map<Card, CMYKC
     }   
 
     // randomize order of keys by using sort 
-    keys.sort(() => Math.random() - 0.5); 
-
-    /*
-    for (let i = keys.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-
-        if (keys[i] === undefined) {
-            throw new Error("Undefined key encountered during shuffle.");
-        }
-
-        if (keys[j] === undefined) {
-            throw new Error("Undefined key encountered during shuffle.");
-        }          
-
-        const tempKey = keys[i];
-        keys[i] = keys[j];
-   
-        if (tempKey === undefined) {
-            throw new Error("Undefined key encountered during shuffle.");
-        }
-
-        keys[j] = tempKey;
-
-    }*/
-
-    // Random number between MIN_SELECTION_COUNT and MAX_SELECTION_COUNT
     const numColors = MIN_SELECTION_COUNT + Math.floor(Math.random() * (MAX_SELECTION_COUNT - MIN_SELECTION_COUNT + 1));
 
-    const chosen = keys.slice(0, numColors);
+    let chosen: Card[] = [];
+
+    /**
+     * Only allow combinations where there are no equal non-zero CMYK amounts.
+     * For example, (C10, M10, Y10) is not allowed because all channels have 0.1.
+     */
+    let isAllowed = false;
+    while (!isAllowed) {
+        // Shuffle keys
+        keys.sort(() => Math.random() - 0.5);
+
+        // Pick random number of cards
+        chosen = keys.slice(0, numColors);
+
+        const combined = calculateColor(chosen);
+
+        // Check for oversaturation (any channel > 1)
+        isAllowed = checkColorsAllowed(combined, chosen);
+    }
+
     console.log("Chosen Cards: ", chosen);
 
     return new Map(chosen.map(k => [k, colors.get(k)!]));
 }
 
-export function calculateHex(cmyk: Card[]): string {
+export function checkColorsAllowed(combined: [number, number, number, number], chosen: Card[], { allowKMix = true } = {}) {
+    let isAllowed = combined.every(val => val <= 1);
+
+    // Disallow combinations where K is 1 and any other channel is non-zero
+    if (isAllowed) {
+        const [c, m, y, k] = combined;
+        if (k === 1 && (c > 0 || m > 0 || y > 0)) {
+            isAllowed = false;
+        }
+    }
+
+    // Prevent selection of only C, M, Y cards with same value (e.g., C10 M10 Y10)
+    if (!allowKMix && isAllowed) {
+        const cCards = chosen.filter(card => card.startsWith('C'));
+        const mCards = chosen.filter(card => card.startsWith('M'));
+        const yCards = chosen.filter(card => card.startsWith('Y'));
+        if (cCards.length > 0 && mCards.length > 0 && yCards.length > 0) {
+            // Get all values for C, M, Y
+            const cVals = cCards.map(card => card.slice(1));
+            const mVals = mCards.map(card => card.slice(1));
+            const yVals = yCards.map(card => card.slice(1));
+            // If there is any value present in all three, block
+            for (const val of cVals) {
+                if (mVals.includes(val) && yVals.includes(val)) {
+                    isAllowed = false;
+                    break;
+                }
+            }
+        }
+    }
+
+
+
+    return isAllowed;
+}
+
+export function calculateRgb(cmyk: Card[]): [number, number, number] {
     const [c, m, y, k] = calculateColor(cmyk);
 
     let r = 255 * (1 - c) * (1 - k);
@@ -84,6 +113,11 @@ export function calculateHex(cmyk: Card[]): string {
     g = Math.round(g);
     b = Math.round(b);
 
+    return [r, g, b];
+}
+
+export function calculateHex(cmyk: Card[]): string {
+    const [r, g, b] = calculateRgb(cmyk);
     const toHex = (colorValue: number) => colorValue.toString(16).padStart(2, '0');
     const hex = `#${toHex(r)}${toHex(g)}${toHex(b)}`;
 
@@ -110,12 +144,6 @@ export function calculateColor(cols: Card[]): [number, number, number, number] {
         combined[2] += color[2];
         combined[3] += color[3];
     }
-    // Clamp each component to the range [0, 1]
-    const clamped: [number, number, number, number] = [
-        Math.min(1, Math.max(0, combined[0])),
-        Math.min(1, Math.max(0, combined[1])),
-        Math.min(1, Math.max(0, combined[2])),
-        Math.min(1, Math.max(0, combined[3]))
-    ];
-    return clamped;
+
+    return combined;
 }

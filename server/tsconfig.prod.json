@@ -4,24 +4,27 @@
     // File Layout
     "rootDir": "./src",
     "outDir": "./build",
+
     // Environment Settings
     // See also https://aka.ms/tsconfig/module
     // For nodejs:
-    "types": [
-      "node",
-      "jest"
-    ], // if you use jest
+    "types": ["node", "jest"], // if you use jest
     "module": "commonjs",
     "moduleResolution": "node", // oder "node10"
     "esModuleInterop": true,
     "noImplicitAny": true,
-    "target": "esnext", // Other Outputs
-    "sourceMap": true,
+    "target": "esnext",   // Other Outputs
+    "sourceMap": false,
+    "inlineSourceMap": false,
+    "inlineSources": false,
     "declaration": true,
-    "declarationMap": true,
+    "declarationMap": false,
+    "removeComments": true,
+
     // Stricter Typechecking Options
     "noUncheckedIndexedAccess": true,
     "exactOptionalPropertyTypes": true,
+
     // Style Options
     // "noImplicitReturns": true,
     // "noImplicitOverride": true,
@@ -29,6 +32,7 @@
     // "noUnusedParameters": true,
     // "noFallthroughCasesInSwitch": true,
     // "noPropertyAccessFromIndexSignature": true,
+
     // Recommended Options
     "strict": true,
     "jsx": "react-jsx",
@@ -38,10 +42,11 @@
     "moduleDetection": "force",
     "skipLibCheck": true,
   },
-  "include": [
+    "include": [
     "src/**/*"
   ],
   "exclude": [
     "node_modules",
+    "src/**/*.test.ts",
   ]
 }

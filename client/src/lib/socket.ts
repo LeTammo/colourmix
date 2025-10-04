@@ -33,7 +33,12 @@ export function useSocket() {
             console.log('Socket disconnected!');
         }
 
+        function onAnyOutgoing(_event: string, ...data: unknown[]) {
+            console.log('Sent game message:', data);
+        }
+
         // Attach listeners to the single socket instance
+        socket.onAnyOutgoing(onAnyOutgoing);
         socket.on('connect', onConnect);
         socket.on('disconnect', onDisconnect);
 
@@ -46,6 +51,7 @@ export function useSocket() {
         // The listeners need to be removed when the component that uses this hook unmounts,
         // to prevent memory leaks, BUT the socket instance itself remains.
         return () => {
+            socket.offAnyOutgoing(onAnyOutgoing);
             socket.off('connect', onConnect);
             socket.off('disconnect', onDisconnect);
         };

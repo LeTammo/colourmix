@@ -36,8 +36,8 @@ export class GameState {
     ) {
     }
 
-    public toGameStateOutgoingMessage(): GameStateOutgoingMessage {
-        const message = new GameStateOutgoingMessage(this);
+    public toGameStateOutgoingMessage(playerId: string): GameStateOutgoingMessage {
+        const message = new GameStateOutgoingMessage(this, playerId);
         return message;
     }
 }
