@@ -2,6 +2,7 @@
 server/node_modules
 server/build
 server/db/*.sqlite
+server/tsconfig.prod.tsbuildinfo
 
 # client
 client/node_modules
