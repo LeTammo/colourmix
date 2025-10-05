@@ -124,10 +124,12 @@ export class StartRoundOutgoingMessage extends OutgoingMessage {
 export class EndRoundOutgoingMessage extends OutgoingMessage {
     targetCards: Card[]; // or color?
     picks: { [playerId: string]: Card[] };
-    constructor(targetCards: Card[], picks: { [playerId: string]: Card[] }) {
+    scores: { [playerId: string]: number };
+    constructor(targetCards: Card[], picks: { [playerId: string]: Card[] }, scores: { [playerId: string]: number }) {
         super("END_ROUND");
         this.targetCards = targetCards; 
         this.picks = picks;
+        this.scores = scores;
     }
 }
 
