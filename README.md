@@ -77,6 +77,23 @@ npm install
 npm run dev
 ```
 
+### TODOs
+
+- [ ] Keep user card selection after disconnect
+- [ ] Leaderboard
+- [ ] Room management (create/join/leave rooms)
+- [ ] Invite codes
+- [ ] Room settings (time limit, negative scoring, ...)
+- Authentication
+    - [ ] Guest
+    - [ ] OAuth (Google, GitHub, ...)
+- Game Modes
+    - [x] Classic (CMYK)
+    - [ ] Experimental RGB
+- [ ] Server-side request validation
+- [ ] (optional) Card animations
+- [ ] Mobile friendly UI
+
 ---
 
 Have fun playing!
