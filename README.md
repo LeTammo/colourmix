@@ -80,7 +80,10 @@ npm run dev
 ### TODOs
 
 - [ ] Keep user card selection after disconnect
-- [ ] Leaderboard
+- [ ] Playtests and retrieving feedback from players
+- [ ] Docker compose setup for easy deployment
+- [ ] Unit tests
+- [ ] Card reveal per round and leaderboard
 - [ ] Room management (create/join/leave rooms)
 - [ ] Invite codes
 - [ ] Room settings (time limit, negative scoring, ...)
