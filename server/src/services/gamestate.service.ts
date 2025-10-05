@@ -272,10 +272,11 @@ export class Game extends EventEmitter {
             if (!pickedCards) continue;
 
             const correctPicks = pickedCards.filter(card => targetSet.has(card)).length;
+            const wrongPicks = pickedCards.length - correctPicks;
             const player = this.gameState.players.find(p => p.id === playerId);
 
             if (player) {
-                player.score += correctPicks;
+                player.score += correctPicks - wrongPicks;
             }
         }
     }
