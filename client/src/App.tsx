@@ -107,6 +107,12 @@ function App() {
             if (gameState.rounds[gameState.round - 1]?.state === "playing" && gameState.timer > 0) {
                 handlePlaySound();
             }
+        }
+    }, [gameState, handlePlaySound, handleStopSound]);
+
+
+    useEffect(() => {
+        if (gameState) {
 
             // Set state based on gameState
             setState(gameState.rounds[gameState.round - 1]?.state || "waiting");
@@ -146,16 +152,15 @@ function App() {
                         break;
                     }
                 case "playing":
-                    // Don't update selection when timer is updated during playing state
-
-
-                    break;
+                    {
+                        break;
+                    }
                 default:
                     setSelection(new Map())
                     return
             }
         }
-    }, [createColorMap, gameState, handlePlaySound, handleStopSound, playerId, timer]);
+    }, [createColorMap, gameState, playerId]);
 
 
     const onGameMessage = useCallback((message: OutgoingMessage) => {
@@ -170,12 +175,14 @@ function App() {
 
             const roundState = gameStateMessage.gameState.rounds[gameStateMessage.gameState.round - 1]?.state;
             if (roundState === "playing") {
-                // Reset selection only if the round is in playing state and initial gamestate is received
-                setSelection(new Map());
-                socket.emit("game_message", { type: "CARDS_PICKED", cards: Array.from(selection.keys()) });
+                const pickedCards = gameStateMessage.gameState.rounds[gameStateMessage.gameState.round - 1]?.picks || {};
+                const playerCards = pickedCards[gameStateMessage.playerId] || [];
+                setSelection(createColorMap(playerCards));
             }
+
             setPlayerId(gameStateMessage.playerId);
         } else if (message.type === "START_ROUND") {
+            setSelection(new Map());
             const startRoundMessage = message as StartRoundOutgoingMessage;
             setGameState((prev) => {
                 if (prev) {
