@@ -5,6 +5,9 @@ import { GameState } from '../models/gamestate';
 import { IncomingMessage, ChatIncomingMessage, StartRoundIncomingMessage, CardsPickedIncomingMessage, StartRoundOutgoingMessage, ChatOutgoingMessage, EndRoundOutgoingMessage, NewRoundIncomingMessage, NewRoundOutgoingMessage, TimerUpdateOutgoingMessage, StatusOutgoingMessage } from '../models/messages';
 import { Socket, Server } from 'socket.io';
 import { parse as parseCookie } from 'cookie';
+import { UserWithoutPassword } from '../models/user';
+
+
 
 /**
  * Main Game class handling game logic, state, and communication via Socket.IO.
@@ -20,6 +23,7 @@ import { parse as parseCookie } from 'cookie';
 export class Game extends EventEmitter {
     constructor(
         private readonly io: Server,
+        private readonly users: UserWithoutPassword[],
         private readonly clients: Map<string, Socket> = new Map<string, Socket>(),
         private readonly gameState: GameState = new GameState(),
         private chatHistory: ChatIncomingMessage[] = [],
@@ -27,22 +31,40 @@ export class Game extends EventEmitter {
         super()
         this.initializeSocketListeners();
         this.createNewRound();
-
     }
 
     private initializeSocketListeners() {
         this.io.on("connection", (socket) => {
             console.log("Websocket client connected:", socket.id);
 
-            const cookies = parseCookie(socket.handshake.headers.cookie || "");
+            const user = socket.user;
 
-            console.log("Cookies from client ("+ socket.id + "):", cookies);
+            if (!this.users || this.users.length === 0) {
+                console.error("No users available. Connection rejected.");
+                socket.emit("game_message", new StatusOutgoingMessage("ERROR", "No users available on the server. Please contact the administrator."));
+                socket.disconnect()
+                return;
+            }
 
-            const playerId = cookies.playerId;
+            if (!user) {
+                console.error("No user info found in socket. Connection rejected.");
+                socket.emit("game_message", new StatusOutgoingMessage("ERROR", "You are not logged in. Please log in to join the game."));
+                socket.disconnect()
+                return;
+            }
+
+            const playerId = user.playerId
 
             if (!playerId) {
-                console.error("No playerId cookie found. Connection rejected.");
+                console.error("No playerId found. Connection rejected.");
                 socket.emit("game_message", new StatusOutgoingMessage("ERROR", "You are not logged in. Please log in to join the game."));
+                socket.disconnect()
+                return;
+            }
+
+            if (!this.users.find(u => u.id === playerId)) {
+                console.error("Player ID not recognized. Connection rejected:", playerId);
+                socket.emit("game_message", new StatusOutgoingMessage("ERROR", "Your user account is not recognized. Please contact the administrator."));
                 socket.disconnect()
                 return;
             }
@@ -58,7 +80,7 @@ export class Game extends EventEmitter {
             this.clients.set(playerId, socket);
 
             // Add player to gamestate (or update socket ID if already exists)
-            this.addPlayer(playerId, socket.id, `Player ${this.gameState.players.length + 1}`, this.gameState.players.length === 0);
+            this.addPlayer(playerId, socket.id, user.username, this.gameState.players.length === 0);
             socket.emit("game_message", new StatusOutgoingMessage("SUCCESS", "Successfully connected to the game server."));
 
             //console.log("Active players: ", this.gameState.players)

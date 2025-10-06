@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo, useRef, useCallback } from "react";
+import { useEffect, useState, useMemo, useRef, useCallback, use } from "react";
 import { MAX_SELECTION_COUNT, CLOCK_VOLUME } from "./lib/constants";
 import { colors, calculateHex, type CMYKColor, type Card } from "./lib/color";
 // import Chat from "./components/Chat.tsx";
@@ -6,12 +6,15 @@ import StartGameIcon from "./components/StartGameIcon.tsx";
 import AudioPlayer, { type AudioPlayerHandle } from "./components/AudioPlayer";
 import Chat from "./components/Chat.tsx";
 import ToastMessage from "./components/ToastMessage.tsx"
-import { socket } from "./lib/socket.ts";
+import { useSocket } from "./lib/socket.ts";
 import type { EndRoundOutgoingMessage, GameStateOutgoingMessage, NewRoundOutgoingMessage, OutgoingMessage, StartRoundOutgoingMessage, StatusOutgoingMessage, TimerUpdateOutgoingMessage } from "../../server/src/models/messages.ts";
 import ResetGameIcon from "./components/ResetGameIcon.tsx";
 import type { CardState } from "./components/CardComponent.tsx";
 import CardComponent from "./components/CardComponent.tsx";
+import Login from "./components/Login.tsx";
 
+
+type LoginStatus = "checking" | "logged_in" | "logged_out";
 
 function App() {
     const [targetColor, setTargetColor] = useState<Map<Card, CMYKColor>>(new Map());
@@ -20,9 +23,12 @@ function App() {
     const [timer, setTimer] = useState(-1);
     const [isHost, setIsHost] = useState(false);
     const [playerId, setPlayerId] = useState<string | null>(null);
+    const [token, setToken] = useState<string | null>(localStorage.getItem('token'));
+    const [loginStatus, setLoginStatus] = useState<LoginStatus>("checking");
     const [state, setState] = useState<"waiting" | "playing" | "finished">("waiting");
     const [statusMessages, setStatusMessages] = useState<StatusOutgoingMessage[]>([]);
     const [gameState, setGameState] = useState<GameStateOutgoingMessage["gameState"] | null>(null);
+    const { socket, connectionStatus } = useSocket();
 
     const removeMessage = (id: string) => {
         setStatusMessages((msgs) => msgs.filter((msg) => msg.id !== id));
@@ -58,7 +64,7 @@ function App() {
                 socket.emit("game_message", { type: "START_ROUND" })
             }
         }
-    }, [gameState, isHost]);
+    }, [gameState, isHost, socket]);
     // If the timer is -1 or 0, nothing can be selected
     // If the timer is >0, colors can be selected up to a count of MAX_MIXING_COUNT
     // No duplicate colors allowed in selection
@@ -80,7 +86,7 @@ function App() {
 
         setSelection(newSelection);
         socket.emit("game_message", { type: "CARDS_PICKED", cards: Array.from(newSelection.keys()) });
-    }, [selection, timer]);
+    }, [selection, socket, timer]);
 
     const createColorMap = useCallback((targetCards: Card[]) => {
         const newTargetColor = new Map<Card, CMYKColor>();
@@ -93,6 +99,32 @@ function App() {
         return newTargetColor;
     }, [])
 
+    // Send a request to check login status when the component mounts
+    /*useEffect(() => {
+        if (!token) {
+            setLoginStatus("logged_out");
+            return;
+        }
+
+        fetch("http://localhost:3000/login", {
+            method: "GET",
+            headers: {
+                Authorization: `Bearer ${token}`,
+            }
+        })
+            .then((response) => response.json())
+            .then((data) => {
+                if (data.user) {
+                    setLoginStatus("logged_in");
+                } else {
+                    setLoginStatus("logged_out");
+                }
+            })
+            .catch((error) => {
+                console.error("Error checking login status:", error);
+                setLoginStatus("logged_out");
+            });
+    }, [token]);*/
 
     useEffect(() => {
         if (gameState) {
@@ -246,7 +278,7 @@ function App() {
             });
         }
         // Handle other message types as needed
-    }, [selection]);
+    }, [selection, socket]);
 
     useEffect(() => {
         socket.on("game_message", onGameMessage);
@@ -266,7 +298,7 @@ function App() {
             socket.off("disconnect");
             socket.off("game_message", onGameMessage);
         };
-    }, [onGameMessage]);
+    }, [onGameMessage, socket]);
 
 
     // Whenever the selection changes, recalculate the current mix
@@ -320,9 +352,9 @@ function App() {
             if (state === "waiting") {
                 // uncomment the next line to visually indicate inactive cards during waiting state
                 //status = "inactive";
-            } else if (timer > 0) {
+            } else if (state === "playing") {
                 status = inSelection ? "selected" : "default";
-            } else if (timer === 0) {
+            } else if (state === "finished") {
                 if (!inTarget && inSelection) status = "inactive-selected";
                 else if (!inTarget && !inSelection) status = "inactive";
                 else if (inTarget && inSelection) status = "selected-correct";
@@ -331,14 +363,15 @@ function App() {
 
             return { name, arr, color, inTarget, inSelection, status };
         });
-    }, [targetColor, selection, timer, state]);
+    }, [targetColor, selection, state]);
 
     return (
         <div className="flex font-nunito h-screen">
             <div className="flex-grow w-3/4 flex relative items-center justify-center bg-gray-100">
                 <ToastMessage messages={statusMessages} onRemove={(id) => removeMessage(id)} />
-
-                {gameState && (<div className="game-container">
+                {connectionStatus === "waiting" && (<div className="text-center text-gray-600">Connecting to server...</div>)}
+                {connectionStatus === "disconnected" && (<Login />)}
+                {connectionStatus === "connected" && gameState && (<div className="game-container">
                     <header className="game-header text-3xl text-center font-extrabold">
                         <h1>CMYK Color Mixer</h1>
                     </header>

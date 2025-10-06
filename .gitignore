@@ -3,6 +3,11 @@ server/node_modules
 server/build
 server/db/*.sqlite
 server/tsconfig.prod.tsbuildinfo
+server/*.local
+server/.env
+server/.env.local
+server/.env.development
+server/.env.development.local
 
 # client
 client/node_modules

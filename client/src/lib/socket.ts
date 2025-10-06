@@ -9,7 +9,7 @@ const SERVER_URL = 'http://localhost:3000'; // Replace with your actual server U
 export const socket = io(SERVER_URL, {
     // Optional: Add configuration options here
     autoConnect: false, // Set to false if you want to connect manually later
-    withCredentials: true, // Include credentials if needed
+    auth: { token: localStorage.getItem('token') || '' } // Example of sending a token for authentication
 });
 
 
@@ -19,17 +19,22 @@ export const socket = io(SERVER_URL, {
  * @returns {object} An object containing the socket instance and the connection status.
  */
 export function useSocket() {
-    const [isConnected, setIsConnected] = useState(socket.connected);
+    const [connectionStatus, setConnectionStatus] = useState<"waiting" | "connected" | "disconnected">("waiting");
 
     useEffect(() => {
         // Event listeners to update the connection state
         function onConnect() {
-            setIsConnected(true);
+            setConnectionStatus("connected");
             console.log('Socket connected!');
         }
 
+        function onConnectError() {
+            setConnectionStatus("disconnected");
+            console.error('Socket connection error!');
+        }
+
         function onDisconnect() {
-            setIsConnected(false);
+            setConnectionStatus("disconnected");
             console.log('Socket disconnected!');
         }
 
@@ -40,6 +45,7 @@ export function useSocket() {
         // Attach listeners to the single socket instance
         socket.onAnyOutgoing(onAnyOutgoing);
         socket.on('connect', onConnect);
+        socket.on('connect_error', onConnectError);
         socket.on('disconnect', onDisconnect);
 
         // If the socket is set to autoConnect: false, you'll need to call connect() here
@@ -53,9 +59,10 @@ export function useSocket() {
         return () => {
             socket.offAnyOutgoing(onAnyOutgoing);
             socket.off('connect', onConnect);
+            socket.off('connect_error', onConnectError);
             socket.off('disconnect', onDisconnect);
         };
     }, []); // Empty dependency array ensures this setup runs only on mount
 
-    return { socket, isConnected };
+    return { socket, connectionStatus };
 }
