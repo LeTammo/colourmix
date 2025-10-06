@@ -267,10 +267,16 @@ export class Game extends EventEmitter {
         }
         currentRound.state = "finished";
 
+        this.calculateScores(currentRound.picks, currentRound.targetCards);
+
         this.io.emit("game_message", new EndRoundOutgoingMessage(
             currentRound.targetCards,
-            currentRound.picks
-        ));
+            currentRound.picks,
+            this.gameState.players.reduce((acc, p) => {
+                acc[p.id] = p.score;
+                return acc;
+            }, {} as { [playerId: string]: number }
+        )));
 
         if (this.gameState.round >= this.gameState.maxRounds) {
             this.emit("game_over", this.gameState);
@@ -278,7 +284,23 @@ export class Game extends EventEmitter {
         }
 
         this.emit("end_round", this.gameState);
-        // TODO: calculate scores 
+    }
+
+    calculateScores(cardsPicked: { [playerId: string]: Card[] }, targetCards: Card[]) {
+        const targetSet = new Set(targetCards.map(c => c));
+
+        for (const playerId in cardsPicked) {
+            const pickedCards = cardsPicked[playerId];
+            if (!pickedCards) continue;
+
+            const correctPicks = pickedCards.filter(card => targetSet.has(card)).length;
+            const wrongPicks = pickedCards.length - correctPicks;
+            const player = this.gameState.players.find(p => p.id === playerId);
+
+            if (player) {
+                player.score += correctPicks - wrongPicks;
+            }
+        }
     }
 
     createNewRound() {
@@ -309,7 +331,7 @@ export class Game extends EventEmitter {
             return;
 
         }
-        this.gameState.players.push({ id: playerId, socketId, name, score: Math.floor(Math.random()*10), isHost});
+        this.gameState.players.push({ id: playerId, socketId, name, score: 0, isHost});
     }
 
     removePlayerBySocketId(socketId: string) {

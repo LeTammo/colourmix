@@ -260,7 +260,12 @@ function App() {
                         ...prev,
                         timer: 0,
                         round: prev.round,
-                        rounds: updatedRounds
+                        rounds: updatedRounds,
+                        players: Object.fromEntries(Object.entries(prev.players).map(([id, player]) => {
+                            const playerScore = endRoundMessage.scores[id];
+                            const updatedPlayer = playerScore !== undefined ? { ...player, score: playerScore } : null;
+                            return [id, updatedPlayer ? { ...player, score: updatedPlayer.score } : player];
+                        }))
                     };
                 }
                 return prev;
