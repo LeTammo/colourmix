@@ -35,7 +35,8 @@ export function createRandomColor(colors: Map<Card, CMYKColor>): Map<Card, CMYKC
     const keys = [...colors.keys()];
 
     if (keys.length === 0) {
-        throw new Error("No colors available to choose from.");
+        console.error("No colors available to choose from.");
+        return new Map();
     }   
 
     // randomize order of keys by using sort 
@@ -55,10 +56,7 @@ export function createRandomColor(colors: Map<Card, CMYKColor>): Map<Card, CMYKC
         // Pick random number of cards
         chosen = keys.slice(0, numColors);
 
-        const combined = calculateColor(chosen);
-
-        // Check for oversaturation (any channel > 1)
-        isAllowed = checkColorsAllowed(combined, chosen);
+        isAllowed = checkColorsAllowed(chosen);
     }
 
     console.log("Chosen Cards: ", chosen);
@@ -66,7 +64,8 @@ export function createRandomColor(colors: Map<Card, CMYKColor>): Map<Card, CMYKC
     return new Map(chosen.map(k => [k, colors.get(k)!]));
 }
 
-export function checkColorsAllowed(combined: [number, number, number, number], chosen: Card[], { allowKMix = true } = {}) {
+export function checkColorsAllowed(cards: Card[], allowKMix = true) {
+    const combined = combineColors(cards);
     let isAllowed = combined.every(val => val <= 1);
 
     // Disallow combinations where K is 1 and any other channel is non-zero
@@ -75,13 +74,13 @@ export function checkColorsAllowed(combined: [number, number, number, number], c
         if (k === 1 && (c > 0 || m > 0 || y > 0)) {
             isAllowed = false;
         }
-    }
+    }  
 
     // Prevent selection of only C, M, Y cards with same value (e.g., C10 M10 Y10)
     if (!allowKMix && isAllowed) {
-        const cCards = chosen.filter(card => card.startsWith('C'));
-        const mCards = chosen.filter(card => card.startsWith('M'));
-        const yCards = chosen.filter(card => card.startsWith('Y'));
+        const cCards = cards.filter(card => card.startsWith('C'));
+        const mCards = cards.filter(card => card.startsWith('M'));
+        const yCards = cards.filter(card => card.startsWith('Y'));
         if (cCards.length > 0 && mCards.length > 0 && yCards.length > 0) {
             // Get all values for C, M, Y
             const cVals = cCards.map(card => card.slice(1));
@@ -96,14 +95,12 @@ export function checkColorsAllowed(combined: [number, number, number, number], c
             }
         }
     }
-
-
-
     return isAllowed;
 }
 
-export function calculateRgb(cmyk: Card[]): [number, number, number] {
-    const [c, m, y, k] = calculateColor(cmyk);
+
+export function calculateRgb(cards: Card[]): [number, number, number] {
+    const [c, m, y, k] = combineColors(cards);
 
     let r = 255 * (1 - c) * (1 - k);
     let g = 255 * (1 - m) * (1 - k);
@@ -116,20 +113,16 @@ export function calculateRgb(cmyk: Card[]): [number, number, number] {
     return [r, g, b];
 }
 
-export function calculateHex(cmyk: Card[]): string {
-    const [r, g, b] = calculateRgb(cmyk);
+export function calculateHex(cards: Card[]): string {
+    const [r, g, b] = calculateRgb(cards);
     const toHex = (colorValue: number) => colorValue.toString(16).padStart(2, '0');
     const hex = `#${toHex(r)}${toHex(g)}${toHex(b)}`;
 
     return hex.toUpperCase();
 }
 
-/**
- * Calculates the combined CMYK color values from an array of card names.
- * @param cols - Array of card names representing colors to combine.
- * @returns A tuple of four numbers representing the combined CMYK values.
- */
-export function calculateColor(cols: Card[]): [number, number, number, number] {
+
+export function combineColors(cols: Card[]): [number, number, number, number] {
 
     const combined: [number, number, number, number] = [0, 0, 0, 0];
     for (const col of cols) {
