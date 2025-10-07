@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo, useRef, useCallback, use } from "react";
+import { useEffect, useState, useMemo, useRef, useCallback } from "react";
 import { MAX_SELECTION_COUNT, CLOCK_VOLUME } from "./lib/constants";
 import { colors, calculateHex, type CMYKColor, type Card } from "./lib/color";
 // import Chat from "./components/Chat.tsx";
@@ -13,9 +13,6 @@ import type { CardState } from "./components/CardComponent.tsx";
 import CardComponent from "./components/CardComponent.tsx";
 import Login from "./components/Login.tsx";
 
-
-type LoginStatus = "checking" | "logged_in" | "logged_out";
-
 function App() {
     const [targetColor, setTargetColor] = useState<Map<Card, CMYKColor>>(new Map());
     const [currentMix, setCurrentMix] = useState(new Map<Card, CMYKColor>());
@@ -23,8 +20,6 @@ function App() {
     const [timer, setTimer] = useState(-1);
     const [isHost, setIsHost] = useState(false);
     const [playerId, setPlayerId] = useState<string | null>(null);
-    const [token, setToken] = useState<string | null>(localStorage.getItem('token'));
-    const [loginStatus, setLoginStatus] = useState<LoginStatus>("checking");
     const [state, setState] = useState<"waiting" | "playing" | "finished">("waiting");
     const [statusMessages, setStatusMessages] = useState<StatusOutgoingMessage[]>([]);
     const [gameState, setGameState] = useState<GameStateOutgoingMessage["gameState"] | null>(null);

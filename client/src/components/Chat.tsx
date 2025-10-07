@@ -4,7 +4,7 @@ import { useSocket } from "../lib/socket";
 
 function Chat({players}: {players: GameStateOutgoingMessage["gameState"]["players"] | undefined}) {
     const chatEndRef = useRef<HTMLDivElement | null>(null);
-    const { socket, isConnected } = useSocket();
+    const { socket, connectionStatus } = useSocket();
     const [chat, setChat] = useState<ChatOutgoingMessage[]>([]);
     const [msg, setMsg] = useState("");
 
@@ -77,13 +77,13 @@ function Chat({players}: {players: GameStateOutgoingMessage["gameState"]["player
                 <input
                     className="flex-grow p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     value={msg}
-                    disabled={!isConnected}
+                    disabled={connectionStatus !== "connected"}
                     onChange={(e) => setMsg(e.target.value)}
                     placeholder="Type a message..."
                 />
                 <button
                     type="submit"
-                    disabled={!msg.trim() || !isConnected}
+                    disabled={!msg.trim() || connectionStatus !== "connected"}
                     className="disabled:bg-gray-300 ml-3 py-2 px-4 bg-blue-600 text-white font-semibold rounded-md hover:bg-blue-700 transition-colors"
                 >
                     Send

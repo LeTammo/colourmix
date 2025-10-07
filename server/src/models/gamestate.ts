@@ -1,4 +1,4 @@
-import { Card } from "../lib/color";
+import type { Card } from "../lib/color";
 import { GameStateOutgoingMessage } from "./messages";
 
 export interface PlayerMetadata {
@@ -27,13 +27,24 @@ export interface Round {
 }
 
 export class GameState {
+    public players: Player[];
+    public timer: number;
+    public round: number;
+    public maxRounds: number;
+    public rounds: Round[];
+
     constructor(
-        public players: Player[] = [],
-        public timer: number = -1,
-        public round: number = 0,
-        public maxRounds: number = 5,
-        public rounds: Round[] = []
+        players: Player[] = [],
+        timer: number = -1,
+        round: number = 0,
+        maxRounds: number = 5,
+        rounds: Round[] = []
     ) {
+        this.players = players;
+        this.timer = timer;
+        this.round = round;
+        this.maxRounds = maxRounds;
+        this.rounds = rounds;
     }
 
     public toGameStateOutgoingMessage(playerId: string): GameStateOutgoingMessage {

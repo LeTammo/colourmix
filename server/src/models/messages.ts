@@ -1,4 +1,4 @@
-import { Card } from "../lib/color";
+import type { Card } from "../lib/color";
 import { GameState } from "./gamestate";
 
 export interface IncomingMessage {
@@ -104,7 +104,7 @@ export class NewRoundOutgoingMessage extends OutgoingMessage {
     timer: number;
     round: number;
 
-    constructor(timer: number, round: number, targetColor: string) {
+    constructor(timer: number, round: number) {
         super("NEW_ROUND");
         this.timer = timer;
         this.round = round;
