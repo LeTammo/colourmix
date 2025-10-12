@@ -12,6 +12,13 @@ server/.env.development.local
 # client
 client/node_modules
 client/build
+client/*.local
+client/.env
+client/.env.local
+client/.env.development
+client/.env.development.local
+
+.env
 
 # env and other files
 .idea
