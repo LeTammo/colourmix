@@ -10,7 +10,7 @@ import passport from "passport";
 import { Strategy as LocalStrategy } from "passport-local";
 import { Strategy as JwtStrategy, ExtractJwt } from 'passport-jwt';
 import jwt from "jsonwebtoken";
-import { IUser, User, UserWithoutPassword } from "./models/user";
+import { IUser, User, UserWithoutPassword } from "../../shared/models/user";
 
 
 // Extend Express Request type to include 'user'
@@ -24,6 +24,10 @@ declare global {
 
 if (!process.env.SERVER_PORT) {
   throw new Error("SERVER_PORT is not defined in environment variables");
+}
+
+if (!process.env.SERVER_HOST) {
+  throw new Error("SERVER_HOST is not defined in environment variables");
 }
 
 if (!process.env.SERVER_JWT_SECRET) {
@@ -48,6 +52,7 @@ if (process.env.NODE_ENV !== 'production') {
 
 const PRODUCTION = process.env.NODE_ENV === 'production';
 const PORT = process.env.SERVER_PORT;
+const HOST = process.env.SERVER_HOST;
 const JWT_SECRET = process.env.SERVER_JWT_SECRET;
 const PLAYER1_PASSWORD = process.env.SERVER_PLAYER1_PASSWORD;
 const PLAYER2_PASSWORD = process.env.SERVER_PLAYER2_PASSWORD;
@@ -157,7 +162,7 @@ app.post(
   }
 );
 
-const io = new Server(server, {
+const io = new Server(server, PRODUCTION ? {} : {
   cors: {
     origin: "http://localhost:5173",
     methods: ["GET", "POST"],
@@ -189,4 +194,4 @@ io.use((socket, next) => {
 const game = new Game(io, Users.map((u) => new UserWithoutPassword(u.id, u.username)));
 
 
-server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+server.listen({ host: HOST, port: PORT }, () => console.log(`Server running on http://${HOST}:${PORT}`));

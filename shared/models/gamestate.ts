@@ -1,10 +1,6 @@
-import type { Card } from "../lib/color";
-import { GameStateOutgoingMessage } from "./messages";
 
-export interface PlayerMetadata {
-    id: string;
-    cookie: string;
-}
+import type { Card } from "./color";
+import { GameStateOutgoingMessage } from "./messages";
 
 export interface Player {
     id: string;

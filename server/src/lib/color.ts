@@ -1,35 +1,7 @@
+import { combineColors } from "../../../shared/lib/color";
+import { Card, CMYKColor, ColorData } from "../../../shared/models/color";
 import { MIN_SELECTION_COUNT, MAX_SELECTION_COUNT } from "./constants";
 
-// Cards with values 10, 30, 60 of C M Y K
-export type Card = "C10" | "C30" | "C60" | "M10" | "M30" | "M60"
-    | "Y10" | "Y30" | "Y60" | "K10" | "K30" | "K60";
-
-type CMYKColor = [number, number, number, number];
-
-type ColorData = {
-    name: Card;
-    color: CMYKColor;
-};
-
-
-const colorsOrigin: ColorData[] = [
-    {name: "C10", color: [0.1, 0, 0, 0]},
-    {name: "C30", color: [0.3, 0, 0, 0]},
-    {name: "C60", color: [0.6, 0, 0, 0]},
-    {name: "M10", color: [0, 0.1, 0, 0]},
-    {name: "M30", color: [0, 0.3, 0, 0]},
-    {name: "M60", color: [0, 0.6, 0, 0]},
-    {name: "Y10", color: [0, 0, 0.1, 0]},
-    {name: "Y30", color: [0, 0, 0.3, 0]},
-    {name: "Y60", color: [0, 0, 0.6, 0]},
-    {name: "K10", color: [0, 0, 0, 0.1]},
-    {name: "K30", color: [0, 0, 0, 0.3]},
-    {name: "K60", color: [0, 0, 0, 0.6]},
-];
-
-export const colors = new Map(
-    colorsOrigin.map(({ name, color }) => [name, color])
-);
 
 export function createRandomColor(colors: Map<Card, CMYKColor>): Map<Card, CMYKColor> {
     const keys = [...colors.keys()];
@@ -98,45 +70,3 @@ export function checkColorsAllowed(cards: Card[], allowKMix = true) {
     return isAllowed;
 }
 
-
-export function calculateRgb(cards: Card[]): [number, number, number] {
-    const [c, m, y, k] = combineColors(cards);
-
-    let r = 255 * (1 - c) * (1 - k);
-    let g = 255 * (1 - m) * (1 - k);
-    let b = 255 * (1 - y) * (1 - k);
-
-    r = Math.round(r);
-    g = Math.round(g);
-    b = Math.round(b);
-
-    return [r, g, b];
-}
-
-export function calculateHex(cards: Card[]): string {
-    const [r, g, b] = calculateRgb(cards);
-    const toHex = (colorValue: number) => colorValue.toString(16).padStart(2, '0');
-    const hex = `#${toHex(r)}${toHex(g)}${toHex(b)}`;
-
-    return hex.toUpperCase();
-}
-
-
-export function combineColors(cols: Card[]): [number, number, number, number] {
-
-    const combined: [number, number, number, number] = [0, 0, 0, 0];
-    for (const col of cols) {
-        const color = colors.get(col);
-
-        if (color === undefined) {
-            throw new Error(`Color ${col} not found in colors map.`);
-        }
-
-        combined[0] += color[0];
-        combined[1] += color[1];
-        combined[2] += color[2];
-        combined[3] += color[3];
-    }
-
-    return combined;
-}

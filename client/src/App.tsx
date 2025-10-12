@@ -1,21 +1,22 @@
 import { useEffect, useState, useMemo, useRef, useCallback } from "react";
 import { MAX_SELECTION_COUNT, CLOCK_VOLUME } from "./lib/constants";
-import { colors, calculateHex, type CMYKColor, type Card } from "./lib/color";
-// import Chat from "./components/Chat.tsx";
 import StartGameIcon from "./components/StartGameIcon.tsx";
 import AudioPlayer, { type AudioPlayerHandle } from "./components/AudioPlayer";
 import Chat from "./components/Chat.tsx";
 import ToastMessage from "./components/ToastMessage.tsx"
 import { useSocket } from "./lib/socket.ts";
-import type { EndRoundOutgoingMessage, GameStateOutgoingMessage, NewRoundOutgoingMessage, OutgoingMessage, StartRoundOutgoingMessage, StatusOutgoingMessage, TimerUpdateOutgoingMessage } from "../../server/src/models/messages.ts";
+import type { EndRoundOutgoingMessage, GameStateOutgoingMessage, NewRoundOutgoingMessage, OutgoingMessage, StartRoundOutgoingMessage, StatusOutgoingMessage, TimerUpdateOutgoingMessage } from "../../shared/models/messages";
 import ResetGameIcon from "./components/ResetGameIcon.tsx";
 import type { CardState } from "./components/CardComponent.tsx";
 import CardComponent from "./components/CardComponent.tsx";
 import Login from "./components/Login.tsx";
+import type { Card, CMYKColor } from "../../shared/models/color.ts";
+import { calculateHex, colors } from "../../shared/lib/color.ts";
+
 
 function App() {
     const [targetColor, setTargetColor] = useState<Map<Card, CMYKColor>>(new Map());
-    const [currentMix, setCurrentMix] = useState(new Map<Card, CMYKColor>());
+    const [currentMix, setCurrentMix] = useState<Set<Card>>(new Set());
     const [selection, setSelection] = useState(new Map<Card, CMYKColor>());
     const [timer, setTimer] = useState(-1);
     const [isHost, setIsHost] = useState(false);
@@ -304,11 +305,11 @@ function App() {
     // Whenever the selection changes, recalculate the current mix
     useEffect(() => {
         console.log("Updated Selection")
-        const nextMix = new Map<Card, CMYKColor>();
+        const nextMix = new Set<Card>();
         for (const colorName of selection.keys()) {
             const colorArr = colors.get(colorName);
             if (colorArr) {
-                nextMix.set(colorName, colorArr);
+                nextMix.add(colorName);
             }
         }
         setCurrentMix(nextMix);
@@ -337,13 +338,13 @@ function App() {
     }, [gameState]);
 
     const targetColorHex = useMemo(() => currentTargetColor, [currentTargetColor]);
-    const mixedColorHex = useMemo(() => calculateHex(currentMix), [currentMix]);
+    const mixedColorHex = useMemo(() => calculateHex(Array.from(currentMix)), [currentMix]);
 
 
 
     const cardStates: CardState[] = useMemo(() => {
         return [...colors.entries()].map(([name, arr]) => {
-            const color = calculateHex(new Map([[name, arr]]));
+            const color = calculateHex([name]);
             const inTarget = targetColor.has(name);
             const inSelection = selection.has(name);
 

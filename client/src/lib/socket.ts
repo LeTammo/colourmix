@@ -1,12 +1,13 @@
 import { io } from 'socket.io-client';
 import { useEffect, useState } from 'react';
 
-// The URL should point to your Socket.IO server
-const SERVER_URL = 'http://localhost:3000'; // Replace with your actual server URL
+// Load the WebSocket URL from environment variables.
+// Ensure that VITE_WS_URL is defined in your .env file.
+const WS_URL = import.meta.env.VITE_WS_URL;
 
 // This variable will hold the single instance of the socket.
 // It is initialized when this module is first imported.
-export const socket = io(SERVER_URL, {
+export const socket = io(WS_URL, {
     // Optional: Add configuration options here
     autoConnect: false, // Set to false if you want to connect manually later
     auth: { token: localStorage.getItem('token') || '' } // Example of sending a token for authentication

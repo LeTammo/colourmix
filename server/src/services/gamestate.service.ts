@@ -1,13 +1,12 @@
 import { EventEmitter } from 'stream';
-import { calculateHex, Card, colors, createRandomColor } from '../lib/color';
+import { createRandomColor } from '../lib/color';
 import { ROUND_TIME_IN_SECONDS } from '../lib/constants';
-import { GameState } from '../models/gamestate';
-import { IncomingMessage, ChatIncomingMessage, StartRoundIncomingMessage, CardsPickedIncomingMessage, StartRoundOutgoingMessage, ChatOutgoingMessage, EndRoundOutgoingMessage, NewRoundIncomingMessage, NewRoundOutgoingMessage, TimerUpdateOutgoingMessage, StatusOutgoingMessage } from '../models/messages';
+import { GameState } from "../../../shared/models/gamestate";
+import { IncomingMessage, ChatIncomingMessage, StartRoundIncomingMessage, CardsPickedIncomingMessage, StartRoundOutgoingMessage, ChatOutgoingMessage, EndRoundOutgoingMessage, NewRoundIncomingMessage, NewRoundOutgoingMessage, TimerUpdateOutgoingMessage, StatusOutgoingMessage } from '../../../shared/models/messages';
 import { Socket, Server } from 'socket.io';
-import { parse as parseCookie } from 'cookie';
-import { UserWithoutPassword } from '../models/user';
-
-
+import { UserWithoutPassword } from '../../../shared/models/user';
+import { Card } from '../../../shared/models/color';
+import { calculateHex, colors } from '../../../shared/lib/color';
 
 /**
  * Main Game class handling game logic, state, and communication via Socket.IO.
@@ -205,7 +204,6 @@ export class Game extends EventEmitter {
         const newRoundMessage = new NewRoundOutgoingMessage(
             this.gameState.timer,
             this.gameState.round,
-            newRound.targetColor
         )
 
         this.io.emit("game_message", newRoundMessage);

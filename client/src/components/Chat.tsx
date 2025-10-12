@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
-import { ChatOutgoingMessage, GameStateOutgoingMessage, OutgoingMessage } from "../../../server/src/models/messages";
+import { ChatOutgoingMessage, GameStateOutgoingMessage, OutgoingMessage } from "../../../shared/models/messages";
 import { useSocket } from "../lib/socket";
 
 function Chat({players}: {players: GameStateOutgoingMessage["gameState"]["players"] | undefined}) {

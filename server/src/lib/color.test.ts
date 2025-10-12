@@ -1,4 +1,5 @@
-import { checkColorsAllowed, Card } from "./color";
+import { Card } from "../../../shared/models/color";
+import { checkColorsAllowed } from "./color";
 
 describe("checkColorsAllowed", () => {
     it("allows valid combinations with no equal non-zero CMYK values", () => {

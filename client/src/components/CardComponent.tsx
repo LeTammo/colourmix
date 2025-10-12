@@ -1,4 +1,4 @@
-import type { Card, CMYKColor } from "../lib/color";
+import type { Card, CMYKColor } from "../../../shared/models/color";
 import Checkmark from "./Checkmark";
 
 export type CardState = {

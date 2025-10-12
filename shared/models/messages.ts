@@ -1,4 +1,4 @@
-import type { Card } from "../lib/color";
+import type { Card } from "./color";
 import { GameState } from "./gamestate";
 
 export interface IncomingMessage {

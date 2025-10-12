@@ -1,5 +1,5 @@
 import { useEffect, useCallback, useRef } from 'react';
-import { StatusOutgoingMessage } from '../../../server/src/models/messages';
+import { StatusOutgoingMessage } from '../../../shared/models/messages';
 
 /**
  * ToastMessage component for showing temporary success or error messages

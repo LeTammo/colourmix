@@ -1,0 +1,15 @@
+version: '3.8'
+
+services:
+  client:
+    build:
+      context: .
+      dockerfile: client/Dockerfile
+    ports:
+      - "${CLIENT_HOST:-127.0.0.1}:${CLIENT_PORT:-8080}:80"
+    restart: unless-stopped
+    container_name: colourmix-client
+    env_file:
+      # Load environment variables from .env file
+      # Excludes .env.local, .env.development, .env.development.local
+      - ./client/.env
