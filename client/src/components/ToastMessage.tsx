@@ -66,13 +66,13 @@ const ToastMessage = ({ messages, onRemove }: { messages: StatusOutgoingMessage[
 
     // Conditional function to get Tailwind classes based on message type
     const getToastClasses = (message: StatusOutgoingMessage) => {
-        let base = 'py-2 px-4 rounded-lg shadow-xl mt-3 flex items-center justify-between min-w-[280px] transition-all duration-300 ease-out transform translate-x-0 opacity-100';
+        const base = 'py-2 px-4 relative overflow-hidden rounded-lg shadow-xl mt-3 flex items-center justify-between min-w-[280px] transition-all duration-300 ease-out transform translate-x-0 opacity-100';
         if (message.type === 'SUCCESS') {
             // Light green background, green border, dark green text
-            return `${base} bg-emerald-100 border border-green-400 text-green-800`;
+            return `${base} bg-emerald-100 border border-emerald-400 text-emerald-600`;
         } else if (message.type === 'ERROR') {
             // Light red background, red border, dark red text
-            return `${base} bg-red-100 border border-red-400 text-red-800`;
+            return `${base} bg-red-100 border border-red-400 text-red-600`;
         }
         return base;
     };
@@ -90,8 +90,25 @@ const ToastMessage = ({ messages, onRemove }: { messages: StatusOutgoingMessage[
                     key={message.id}
                     className={getToastClasses(message)}
                 >
-                    <div className="flex items-center">
+                    <div className="flex flex-col w-full">
                         <p className="font-medium text-sm">{message.content}</p>
+                        {/* Progress bar is now absolutely positioned at the bottom, no margin/padding */}
+
+                    </div>
+                    <div className="absolute left-0 bottom-0 w-full h-1 rounded-none ">
+                        <div
+                            className={`h-full origin-right ${
+                                message.type === 'SUCCESS'
+                                    ? 'bg-emerald-400'
+                                    : message.type === 'ERROR'
+                                    ? 'bg-red-400'
+                                    : 'bg-gray-400'
+                            }`}
+                            style={{
+                                width: '100%',
+                                animation: `shrink-progress 20s linear forwards`
+                            }}
+                        />
                     </div>
                     {/* Close button */}
                     <button
@@ -106,5 +123,10 @@ const ToastMessage = ({ messages, onRemove }: { messages: StatusOutgoingMessage[
         </div>
     );
 };
+
+// Add keyframes for shrinking progress bar
+const style = document.createElement('style');
+style.innerHTML = `@keyframes shrink-progress { from { width: 100%; } to { width: 0%; } }`;
+document.head.appendChild(style);
 
 export default ToastMessage;
