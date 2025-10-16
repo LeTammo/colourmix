@@ -26,11 +26,13 @@ export interface CardsPickedIncomingMessage extends IncomingMessage {
 //-------------------------------------------------------------
 
 export interface GameStateOutgoing {
-    players: {[id: string]: {  
-        isHost: boolean; 
-        name: string; 
-        score: number; 
-    }};
+    players: {
+        [id: string]: {
+            isHost: boolean;
+            name: string;
+            score: number;
+        }
+    };
     timer: number;
     round: number;
     maxRounds: number;
@@ -127,7 +129,7 @@ export class EndRoundOutgoingMessage extends OutgoingMessage {
     scores: { [playerId: string]: number };
     constructor(targetCards: Card[], picks: { [playerId: string]: Card[] }, scores: { [playerId: string]: number }) {
         super("END_ROUND");
-        this.targetCards = targetCards; 
+        this.targetCards = targetCards;
         this.picks = picks;
         this.scores = scores;
     }
@@ -140,5 +142,13 @@ export class StatusOutgoingMessage extends OutgoingMessage {
         this.content = message;
     }
 }
+
+export type OutgoingMessages =
+    GameStateOutgoingMessage |
+    TimerUpdateOutgoingMessage |
+    StartRoundOutgoingMessage |
+    EndRoundOutgoingMessage |
+    NewRoundOutgoingMessage |
+    StatusOutgoingMessage
 
 
