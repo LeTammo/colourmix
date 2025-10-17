@@ -87,6 +87,7 @@ npm run dev
 - [ ] Room management (create/join/leave rooms)
 - [ ] Invite codes
 - [ ] Room settings (time limit, negative scoring, ...)
+- [ ] Implement player join/leave/ready messages
 - Authentication
     - [ ] Guest
     - [ ] OAuth (Google, GitHub, ...)
