@@ -3,6 +3,13 @@ export interface IUser {
     username: string;
 }
 
+export interface JwtPayload {
+    user: {
+        id: string;
+        username: string;
+    };
+}
+
 // Class User
 export class User {
     // Unique identifier for the User type

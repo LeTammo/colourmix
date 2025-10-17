@@ -5,7 +5,6 @@ import { GameStateOutgoingMessage } from "./messages";
 export interface Player {
     id: string;
     isHost: boolean;
-    socketId: string;
     name: string;
     score: number;
 }

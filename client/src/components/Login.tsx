@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -6,6 +7,7 @@ const Login: React.FC = () => {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState<string | null>(null);
+    const navigate = useNavigate();
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -22,10 +24,11 @@ const Login: React.FC = () => {
 
             if (response.ok) {
                 const data = await response.json();
-                // Optionally handle the response data
+
                 localStorage.setItem('token', data.token);
-                // Redirect or update UI as needed
-                window.location.reload();
+                
+                // TODO: Redirect to game page
+                navigate("/games/first-game");
             } else {
                 const data = await response.json();
                 setError(data.message || 'Login failed');

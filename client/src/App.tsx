@@ -4,14 +4,14 @@ import StartGameIcon from "./components/StartGameIcon.tsx";
 import AudioPlayer, { type AudioPlayerHandle } from "./components/AudioPlayer";
 import Chat from "./components/Chat.tsx";
 import ToastMessage from "./components/ToastMessage.tsx"
-import { useSocket } from "./lib/socket.ts";
-import type { EndRoundOutgoingMessage, GameStateOutgoingMessage, NewRoundOutgoingMessage, OutgoingMessage, StartRoundOutgoingMessage, StatusOutgoingMessage, TimerUpdateOutgoingMessage } from "../../shared/models/messages";
+import { setGameIdAndConnect, useSocket } from "./lib/socket.ts";
+import type { EndRoundOutgoingMessage, GameStateOutgoingMessage, NewRoundOutgoingMessage, OutgoingMessages, StartRoundOutgoingMessage, StatusOutgoingMessage, TimerUpdateOutgoingMessage } from "../../shared/models/messages";
 import ResetGameIcon from "./components/ResetGameIcon.tsx";
 import type { CardState } from "./components/CardComponent.tsx";
 import CardComponent from "./components/CardComponent.tsx";
-import Login from "./components/Login.tsx";
 import type { Card, CMYKColor } from "../../shared/models/color.ts";
 import { calculateHex, colors } from "../../shared/lib/color.ts";
+import { useNavigate, useParams } from "react-router"
 
 
 function App() {
@@ -25,12 +25,22 @@ function App() {
     const [statusMessages, setStatusMessages] = useState<StatusOutgoingMessage[]>([]);
     const [gameState, setGameState] = useState<GameStateOutgoingMessage["gameState"] | null>(null);
     const { socket, connectionStatus } = useSocket();
+    const { id } = useParams();
+    const navigate = useNavigate();
+
+    useEffect(() => {
+        if (id) {
+            setGameIdAndConnect(id)
+        } else {
+            console.error("No game ID found in URL");
+        }
+    }, [id]);
 
     const removeMessage = (id: string) => {
         setStatusMessages((msgs) => msgs.filter((msg) => msg.id !== id));
     };
 
-    const soundFilePath = "clock.mp3";
+    const soundFilePath = "/clock.mp3";
     const audioPlayerRef = useRef<AudioPlayerHandle>(null);
 
     const handlePlaySound = useCallback(() => {
@@ -61,6 +71,8 @@ function App() {
             }
         }
     }, [gameState, isHost, socket]);
+
+
     // If the timer is -1 or 0, nothing can be selected
     // If the timer is >0, colors can be selected up to a count of MAX_MIXING_COUNT
     // No duplicate colors allowed in selection
@@ -170,7 +182,7 @@ function App() {
                             break;
                         }
                         setSelection(createColorMap(playerCards))
-                        
+
                         break;
                     }
                 case "playing":
@@ -186,7 +198,19 @@ function App() {
     }, [createColorMap, gameState, handlePlaySound, handleStopSound, playerId, timer]);
 
 
-    const onGameMessage = useCallback((message: OutgoingMessage) => {
+    const socketRef = useRef(socket);
+    const selectionRef = useRef(selection);
+
+    useEffect(() => {
+        socketRef.current = socket;
+    }, [socket]);
+
+    useEffect(() => {
+        selectionRef.current = selection;
+    }, [selection]);
+
+    const onGameMessage = useCallback((message: OutgoingMessages) => {
+
         console.log("Received game message:", message); // Debug log
 
         if (message.type === "ERROR" || message.type === "SUCCESS") {
@@ -200,7 +224,7 @@ function App() {
             if (roundState === "playing") {
                 // Reset selection only if the round is in playing state and initial gamestate is received
                 setSelection(new Map());
-                socket.emit("game_message", { type: "CARDS_PICKED", cards: Array.from(selection.keys()) });
+                socketRef.current.emit("game_message", { type: "CARDS_PICKED", cards: Array.from(selectionRef.current.keys()) });
             }
             setPlayerId(gameStateMessage.playerId);
         } else if (message.type === "START_ROUND") {
@@ -278,43 +302,56 @@ function App() {
                 return prev;
             });
         }
-        // Handle other message types as needed
-    }, [selection, socket]);
+    }, []);
 
+    // Handle game messages
     useEffect(() => {
         socket.on("game_message", onGameMessage);
-        socket.on("disconnect", () => {
-            setGameState(null);
-            setPlayerId(null);
-
-            setStatusMessages((msgs) => [...msgs, {
-                id: crypto.randomUUID(),
-                timestamp: Date.now(),
-                type: "ERROR",
-                content: "Lost connection to server. Try reloading the page.",
-            }]);
-        });
-
         return () => {
-            socket.off("disconnect");
             socket.off("game_message", onGameMessage);
         };
-    }, [onGameMessage, socket]);
+        // Handle other message types as needed
+    }, [socket, onGameMessage]);
 
 
-    // Whenever the selection changes, recalculate the current mix
+    const onDisconnect = useCallback(() => {
+        setGameState(null);
+        setPlayerId(null);
+
+        setStatusMessages((msgs) => [...msgs, {
+            id: crypto.randomUUID(),
+            timestamp: Date.now(),
+            type: "ERROR",
+            content: "Lost connection to server.",
+        }]);
+    }, []);
+
+    // Handle disconnect
     useEffect(() => {
-        console.log("Updated Selection")
+        socket.on("disconnect", onDisconnect);
+        return () => {
+
+            socket.off("disconnect", onDisconnect);
+        };
+    }, [socket, onDisconnect]);
+
+    // Whenever the selection changes, recalculate the current mix.
+    // Only keys from `selection` are used because each key represents a selected card.
+    // The color lookup ensures that only valid cards with defined colors are added to the mix.
+    useEffect(() => {
         const nextMix = new Set<Card>();
         for (const colorName of selection.keys()) {
-            const colorArr = colors.get(colorName);
-            if (colorArr) {
-                nextMix.add(colorName);
-            }
+            nextMix.add(colorName);
         }
         setCurrentMix(nextMix);
     }, [selection]);
 
+
+    useEffect(() => {
+        if (connectionStatus === "authentication_error") {
+            navigate("/login");
+        }
+    }, [connectionStatus, navigate]);
     // Round timer
     // Decrease timer every second if it's > 0
     /*useEffect(() => {
@@ -371,7 +408,8 @@ function App() {
             <div className="flex-grow w-3/4 flex relative items-center justify-center bg-gray-100">
                 <ToastMessage messages={statusMessages} onRemove={(id) => removeMessage(id)} />
                 {connectionStatus === "waiting" && (<div className="text-center text-gray-600">Connecting to server...</div>)}
-                {connectionStatus === "disconnected" && (<Login />)}
+                {connectionStatus === "error" && (<div className="text-center text-gray-600">Error connecting to server. Please try again later.</div>)}
+                {connectionStatus === "disconnected" && (<div className="text-center text-gray-600">Disconnected from server. Please reload the page.</div>)}
                 {connectionStatus === "connected" && gameState && (<div className="game-container">
                     <header className="game-header text-3xl text-center font-extrabold">
                         <h1>CMYK Color Mixer</h1>
@@ -423,9 +461,9 @@ function App() {
 
                     <main className="palette-section grid grid-cols-6 gap-4 mt-8 border-2 p-4 border-gray-400 rounded-2xl
                                      shadow-lg bg-white">
-                        {cardStates.map((c) => {
+                        {cardStates.map((cardState) => {
                             return (
-                                <CardComponent key={c.name} c={c} state={state} timer={timer} handleColorSelect={handleColorSelect}/>
+                                <CardComponent key={cardState.name} cardState={cardState} state={state} timer={timer} handleColorSelect={handleColorSelect} />
                             );
                         })}
                     </main>

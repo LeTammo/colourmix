@@ -1,7 +1,7 @@
 import { EventEmitter } from 'stream';
 import { createRandomColor } from '../lib/color';
 import { ROUND_TIME_IN_SECONDS } from '../lib/constants';
-import { GameState } from "../../../shared/models/gamestate";
+import { GameState, Player } from "../../../shared/models/gamestate";
 import { IncomingMessage, ChatIncomingMessage, StartRoundIncomingMessage, CardsPickedIncomingMessage, StartRoundOutgoingMessage, ChatOutgoingMessage, EndRoundOutgoingMessage, NewRoundIncomingMessage, NewRoundOutgoingMessage, TimerUpdateOutgoingMessage, StatusOutgoingMessage } from '../../../shared/models/messages';
 import { Socket, Server } from 'socket.io';
 import { UserWithoutPassword } from '../../../shared/models/user';
@@ -22,87 +22,13 @@ import { calculateHex, colors } from '../../../shared/lib/color';
 export class Game extends EventEmitter {
     constructor(
         private readonly io: Server,
-        private readonly users: UserWithoutPassword[],
-        private readonly clients: Map<string, Socket> = new Map<string, Socket>(),
-        private readonly gameState: GameState = new GameState(),
+        public readonly gameState: GameState = new GameState(),
         private chatHistory: ChatIncomingMessage[] = [],
     ) {
         super()
-        this.initializeSocketListeners();
         this.createNewRound();
     }
 
-    private initializeSocketListeners() {
-        this.io.on("connection", (socket) => {
-            console.log("Websocket client connected:", socket.id);
-
-            const user = socket.user;
-
-            if (!this.users || this.users.length === 0) {
-                console.error("No users available. Connection rejected.");
-                socket.emit("game_message", new StatusOutgoingMessage("ERROR", "No users available on the server. Please contact the administrator."));
-                socket.disconnect()
-                return;
-            }
-
-            if (!user) {
-                console.error("No user info found in socket. Connection rejected.");
-                socket.emit("game_message", new StatusOutgoingMessage("ERROR", "You are not logged in. Please log in to join the game."));
-                socket.disconnect()
-                return;
-            }
-
-            const playerId = user.playerId
-
-            if (!playerId) {
-                console.error("No playerId found. Connection rejected.");
-                socket.emit("game_message", new StatusOutgoingMessage("ERROR", "You are not logged in. Please log in to join the game."));
-                socket.disconnect()
-                return;
-            }
-
-            if (!this.users.find(u => u.id === playerId)) {
-                console.error("Player ID not recognized. Connection rejected:", playerId);
-                socket.emit("game_message", new StatusOutgoingMessage("ERROR", "Your user account is not recognized. Please contact the administrator."));
-                socket.disconnect()
-                return;
-            }
-
-            if (this.clients.has(playerId)) {
-                console.error("Player with this ID already connected:", playerId);
-                socket.emit("game_message", new StatusOutgoingMessage("ERROR", "You are already connected from another device / tab / browser."));
-                socket.disconnect()
-                return;
-            }
-
-            // Add to connected clients
-            this.clients.set(playerId, socket);
-
-            // Add player to gamestate (or update socket ID if already exists)
-            this.addPlayer(playerId, socket.id, user.username, this.gameState.players.length === 0);
-            socket.emit("game_message", new StatusOutgoingMessage("SUCCESS", "Successfully connected to the game server."));
-
-            //console.log("Active players: ", this.gameState.players)
-
-            socket.emit("game_message", this.gameState.toGameStateOutgoingMessage(playerId));
-
-            socket.on("game_message", (data) => {
-
-                if (!data || !data.type) {
-                    console.error("Invalid message format:", data);
-                    return;
-                }
-
-                this.handleMessage(socket, data as IncomingMessage);
-            });
-
-            socket.on("disconnect", () => {
-                console.log("Client disconnected:", socket.id);
-                this.clients.delete(playerId);
-            });
-
-        });
-    }
 
     handleMessage(socket: Socket, message: IncomingMessage) {
         console.log("Received message from", socket.id, ":", message);
@@ -130,11 +56,16 @@ export class Game extends EventEmitter {
         this.chatHistory.push(message);
 
         const outMessage = new ChatOutgoingMessage(
-            this.getPlayerBySocketId(socket.id)?.name || "Unknown",
+            this.getPlayerById(socket.user?.id)?.name || "Unknown",
             message.content,
         );
 
-        this.io.emit("game_message", outMessage);
+        if (!socket.gameId) {
+            console.error("Socket has no gameId. Cannot broadcast chat message.");
+            return;
+        }
+
+        this.io.to(socket.gameId).emit("game_message", outMessage);
         this.emit("chat_message", outMessage);
         // Optionally: emit event or notify listeners
     }
@@ -151,7 +82,7 @@ export class Game extends EventEmitter {
             return;
         }
 
-        const player = this.getPlayerBySocketId(socket.id);
+        const player = this.getPlayerById(socket.user?.id);
 
         if (!player) {
             throw new Error("Player not found for socket id: " + socket.id);
@@ -163,7 +94,7 @@ export class Game extends EventEmitter {
     }
 
     private handleNewRoundMessage(socket: Socket, message: NewRoundIncomingMessage) {
-        const player = this.getPlayerBySocketId(socket.id);
+        const player = this.getPlayerById(socket.user?.id);
 
         if (!player) {
             console.error("Player not found for socket id: " + socket.id);
@@ -206,13 +137,18 @@ export class Game extends EventEmitter {
             this.gameState.round,
         )
 
-        this.io.emit("game_message", newRoundMessage);
+        if (!socket.gameId) {
+            console.error("Socket has no gameId. Cannot broadcast new round message.");
+            return;
+        }
+
+        this.io.to(socket.gameId).emit("game_message", newRoundMessage);
         this.emit("new_round", this.gameState);
         // Optionally: reset state, emit event, etc.
     }
 
     private handleStartRoundMessage(socket: Socket, message: StartRoundIncomingMessage) {
-        const player = this.getPlayerBySocketId(socket.id);
+        const player = this.getPlayerById(socket.user?.id);
 
         if (!player) {
             console.error("Player not found for socket id: " + socket.id);
@@ -237,26 +173,36 @@ export class Game extends EventEmitter {
         }
 
         currentRound.state = "playing";
-
-        this.io.emit("game_message", new StartRoundOutgoingMessage(currentRound.targetColor, currentRound.targetCards.length));
-
+        
+        
         // Start countdown timer
         const timerInterval = setInterval(() => {
             if (this.gameState.timer > 1) {
                 this.gameState.timer -= 1;
-                this.io.emit("game_message", new TimerUpdateOutgoingMessage(this.gameState.timer));
+                if (!socket.gameId) {
+                    console.error("Socket has no gameId. Cannot broadcast timer update.");
+                    return;
+                }
+
+                this.io.to(socket.gameId).emit("game_message", new TimerUpdateOutgoingMessage(this.gameState.timer));
             } else {
                 this.gameState.timer = 0;
-                this.roundEnd();
+                this.roundEnd(socket);
                 clearInterval(timerInterval);
             }
         }, 1000);
+        
+        if (!socket.gameId) {
+            console.error("Socket has no gameId. Cannot broadcast start round message.");
+            return;
+        }
 
+        this.io.to(socket.gameId).emit("game_message", new StartRoundOutgoingMessage(currentRound.targetColor, currentRound.targetCards.length));
         this.emit("start_round", this.gameState);
         // Optionally: reset state, emit event, etc.
     }
 
-    roundEnd() {
+    roundEnd(socket: Socket) {
         const currentRound = this.gameState.rounds[this.gameState.round - 1];
 
         if (!currentRound) {
@@ -267,9 +213,17 @@ export class Game extends EventEmitter {
 
         this.calculateScores(currentRound.picks, currentRound.targetCards);
 
-        this.io.emit("game_message", new EndRoundOutgoingMessage(
+        this.emit("end_round", this.gameState);
+        
+        if (!socket.gameId) {
+            console.error("Socket has no gameId. Cannot broadcast end round message.");
+            return;
+        }
+
+        this.io.to(socket.gameId).emit("game_message", new EndRoundOutgoingMessage(
             currentRound.targetCards,
             currentRound.picks,
+            // Emit scores as a map of playerId to score
             this.gameState.players.reduce((acc, p) => {
                 acc[p.id] = p.score;
                 return acc;
@@ -278,10 +232,8 @@ export class Game extends EventEmitter {
 
         if (this.gameState.round >= this.gameState.maxRounds) {
             this.emit("game_over", this.gameState);
-            return;
         }
 
-        this.emit("end_round", this.gameState);
     }
 
     calculateScores(cardsPicked: { [playerId: string]: Card[] }, targetCards: Card[]) {
@@ -293,7 +245,7 @@ export class Game extends EventEmitter {
 
             const correctPicks = pickedCards.filter(card => targetSet.has(card)).length;
             const wrongPicks = pickedCards.length - correctPicks;
-            const player = this.gameState.players.find(p => p.id === playerId);
+            const player = this.getPlayerById(playerId);
 
             if (player) {
                 player.score += correctPicks - wrongPicks;
@@ -316,32 +268,16 @@ export class Game extends EventEmitter {
         return this.gameState.rounds[this.gameState.round - 1];
     }
 
-    addPlayer(playerId: string, socketId: string, name: string, isHost: boolean = false) {
-        if (this.gameState.players.find(p => p.id === playerId)) {
-
-            // Update Socket ID if player already exists
-            this.gameState.players = this.gameState.players.map(p => {
-                if (p.id === playerId) {
-                    return { ...p, socketId };
-                }       
-                return p;
-            });
+    addPlayerIfNotExist(playerId: string, name: string, isHost: boolean = false) {
+        if (this.getPlayerById(playerId)) {
+            // Player already exists, no need to add
             return;
-
         }
-        this.gameState.players.push({ id: playerId, socketId, name, score: 0, isHost});
-    }
-
-    removePlayerBySocketId(socketId: string) {
-        this.gameState.players = this.gameState.players.filter(p => p.socketId !== socketId);
+        this.gameState.players.push({ id: playerId, name, score: 0, isHost});
     }
 
     removePlayerById(playerId: string) {
         this.gameState.players = this.gameState.players.filter(p => p.id !== playerId);
-    }
-
-    getPlayerBySocketId(socketId: string) {
-        return this.gameState.players.find(p => p.socketId === socketId);
     }
 
     getChatHistory(): ChatIncomingMessage[] {
@@ -369,5 +305,9 @@ export class Game extends EventEmitter {
 
     getGameState(): GameState {
         return this.gameState;
+    }
+
+    getPlayerById(playerId: string): Player | undefined {
+        return this.gameState.players.find(p => p.id === playerId);
     }
 }

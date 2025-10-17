@@ -4,13 +4,13 @@ import express from "express";
 import { createServer } from "http";
 import { Server } from "socket.io";
 import cors from "cors";
-import { Game } from "./services/gamestate.service";
 import cookieParser from "cookie-parser";
 import passport from "passport";
 import { Strategy as LocalStrategy } from "passport-local";
 import { Strategy as JwtStrategy, ExtractJwt } from 'passport-jwt';
 import jwt from "jsonwebtoken";
-import { IUser, User, UserWithoutPassword } from "../../shared/models/user";
+import { IUser, JwtPayload, User, UserWithoutPassword } from "../../shared/models/user";
+import { GamesService } from "./services/games.service";
 
 
 // Extend Express Request type to include 'user'
@@ -111,10 +111,10 @@ passport.use(
 
 
 const options = { jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(), secretOrKey: JWT_SECRET };
-passport.use('jwt', new JwtStrategy(options, function (jwt_payload, done) {
-  const user = Users.find(u => u.id === jwt_payload.user.playerId);
+passport.use('jwt', new JwtStrategy(options, function (jwt_payload: JwtPayload, done) {
+  const user = Users.find(u => u.id === jwt_payload.user.id);
   if (user) {
-    return done(null, { username: user.username, playerId: jwt_payload.user.playerId });
+    return done(null, { username: user.username, id: jwt_payload.user.id });
   } else {
     return done(null, false);
   }
@@ -132,10 +132,6 @@ app.post(
       'login',
       async (err: any, user: IUser, info: any) => {
         try {
-
-          // Delay login response by 1 second to mitigate brute-force attacks
-          await new Promise(resolve => setTimeout(resolve, 1000));
-
           if (err) {
             return next(err);
           }
@@ -147,9 +143,9 @@ app.post(
           req.login(user, { session: false }, async (error) => {
               if (error) return next(error);
 
-              const body = { playerId: user.id, username: user.username };
+              const body: JwtPayload = { user: { id: user.id, username: user.username } };
               // Sign the JWT token with expiry of 1 day
-              const token = jwt.sign({ user: body }, JWT_SECRET, { expiresIn: '1d' });
+              const token = jwt.sign(body, JWT_SECRET, { expiresIn: '1d' });
 
               return res.json({ token });
             }
@@ -173,6 +169,7 @@ const io = new Server(server, PRODUCTION ? {} : {
 declare module "socket.io" {
   interface Socket {
     user?: any;
+    gameId?: string;
   }
 }
 
@@ -183,15 +180,32 @@ io.use((socket, next) => {
     return next(new Error('Authentication error: Token required'));
   }
   try {
-    const decoded = jwt.verify(token, JWT_SECRET) as { user: { playerId: string, username: string } };
+    const decoded = jwt.verify(token, JWT_SECRET) as JwtPayload;
+
+    // TODO: Validate decoded payload structure
+    if (!decoded || !decoded.user) {
+      return next(new Error('Authentication error: Invalid token payload'));
+    }
+
+    if (!decoded.user.id || !Users.find(u => u.id === decoded.user.id)) {
+      return next(new Error('Authentication error: User not found'));
+    } 
+
     socket.user = decoded.user; // Attach user info to the socket object
+
     next();
   } catch (error) {
     return next(new Error('Authentication error: Invalid token'));
   }
 });
 
-const game = new Game(io, Users.map((u) => new UserWithoutPassword(u.id, u.username)));
+const gamesService = new GamesService(io, Users.map(u => new UserWithoutPassword(u.id, u.username)));
+
+
+// For testing purposes, create two games on server start
+
+gamesService.createGame("first-game")
+gamesService.createGame("second-game")
 
 
 server.listen({ host: HOST, port: PORT }, () => console.log(`Server running on http://${HOST}:${PORT}`));
