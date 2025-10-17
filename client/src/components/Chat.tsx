@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import { ChatOutgoingMessage, GameStateOutgoingMessage, OutgoingMessage } from "../../../shared/models/messages";
 import { useSocket } from "../lib/socket";
 
@@ -12,21 +12,23 @@ function Chat({players}: {players: GameStateOutgoingMessage["gameState"]["player
         chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
     }, [chat]);
 
+    const onGameMessage = useCallback((incoming: OutgoingMessage) => {
+        // Ensure the message is of type ChatOutgoingMessage
+        if (incoming.type !== "CHAT") return;
+        
+        console.log("Received chat message:", incoming);
+        
+        setChat((prevChat) => [...prevChat, incoming as ChatOutgoingMessage]);
+    }, []);
+
     useEffect(() => {
-        const onGameMessage = (incoming: OutgoingMessage) => {
-            // Ensure the message is of type ChatOutgoingMessage
-            if (incoming.type !== "CHAT") return;
-            
-            console.log("Received chat message:", incoming);
-            
-            setChat((prevChat) => [...prevChat, incoming as ChatOutgoingMessage]);
-        };
 
         socket.on("game_message", onGameMessage);
         return () => {
             socket.off("game_message", onGameMessage);
         };
-    }, [socket]);
+
+    }, [socket, onGameMessage]);
 
     const sendMessage = (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
@@ -62,12 +64,15 @@ function Chat({players}: {players: GameStateOutgoingMessage["gameState"]["player
 
             <div className="flex-grow overflow-y-auto p-5">
                 <ul className="space-y-3">
-                    {chat.map((c, i) => (
-                        <><div>{c.username}:</div><li key={i}
-                            className="p-2 px-3 bg-blue-100 text-gray-800 rounded-lg max-w-[85%] break-words">
-                            {c.content}
-                        </li>
-                        </>
+                    {chat.map((c) => (
+                        <React.Fragment key={c.id}>
+                            <div>{c.username}:</div>
+                            <li
+                                className="p-2 px-3 bg-blue-100 text-gray-800 rounded-lg max-w-[85%] break-words"
+                            >
+                                {c.content}
+                            </li>
+                        </React.Fragment>
                     ))}
                 </ul>
                 <div ref={chatEndRef} />
