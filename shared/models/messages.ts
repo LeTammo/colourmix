@@ -29,7 +29,7 @@ export interface CardsPickedIncomingMessage extends IncomingMessage {
 
 export abstract class OutgoingMessage {
     id: string;
-    type: "CHAT" | "TIMER_UPDATE" | "START_ROUND" | "NEW_ROUND" | "END_ROUND" | "GAME_STATE" | "ERROR" | "SUCCESS";
+    type: "CHAT" | "TIMER_UPDATE" | "START_ROUND" | "NEW_ROUND" | "END_ROUND" | "GAME_STATE" | "ERROR" | "SUCCESS" | "INFO" | "WARNING";
     timestamp: number;
     constructor(type: OutgoingMessage["type"]) {
         this.id = crypto.randomUUID()
@@ -103,7 +103,7 @@ export class EndRoundOutgoingMessage extends OutgoingMessage {
 
 export class StatusOutgoingMessage extends OutgoingMessage {
     content: string;
-    constructor(type: "SUCCESS" | "ERROR", message: string) {
+    constructor(type: "SUCCESS" | "INFO" | "WARNING" | "ERROR", message: string) {
         super(type);
         this.content = message;
     }

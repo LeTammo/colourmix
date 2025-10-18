@@ -213,7 +213,7 @@ function App() {
 
         console.log("Received game message:", message); // Debug log
 
-        if (message.type === "ERROR" || message.type === "SUCCESS") {
+        if (message.type === "ERROR" || message.type === "SUCCESS" || message.type === "INFO" || message.type === "WARNING") {
             setStatusMessages((msgs) => [...msgs, message as StatusOutgoingMessage]);
         } else if (message.type === "GAME_STATE") {
             // Receive initial game state or updates

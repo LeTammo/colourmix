@@ -73,8 +73,15 @@ const ToastMessage = ({ messages, onRemove }: { messages: StatusOutgoingMessage[
         } else if (message.type === 'ERROR') {
             // Light red background, red border, dark red text
             return `${base} bg-red-100 border border-red-400 text-red-600`;
+        } else if (message.type === 'INFO') {
+            // Light blue background, blue border, dark blue text
+            return `${base} bg-sky-100 border border-sky-400 text-sky-600`;
+        } else if (message.type === 'WARNING') {
+            // Light yellow background, yellow border, dark yellow text
+            return `${base} bg-yellow-100 border border-yellow-400 text-yellow-600`;
+        } else {
+            return base;
         }
-        return base;
     };
 
     // If there are no messages, don't render the container
@@ -102,6 +109,10 @@ const ToastMessage = ({ messages, onRemove }: { messages: StatusOutgoingMessage[
                                     ? 'bg-emerald-400'
                                     : message.type === 'ERROR'
                                     ? 'bg-red-400'
+                                    : message.type === 'INFO'
+                                    ? 'bg-sky-400'
+                                    : message.type === 'WARNING'
+                                    ? 'bg-yellow-400'
                                     : 'bg-gray-400'
                             }`}
                             style={{

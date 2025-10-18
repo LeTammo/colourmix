@@ -99,7 +99,7 @@ export class GamesService {
             const firstRoundState = game.gameState.rounds[0]?.state
             if (!player && firstRoundState && firstRoundState !== "waiting") {
                 console.error("Game already started. Connection rejected for player:", playerId);
-                socket.emit("game_message", new StatusOutgoingMessage("ERROR", "Game already started. You cannot join now."));
+                socket.emit("game_message", new StatusOutgoingMessage("WARNING", "Game already started. You cannot join now."));
                 socket.disconnect();
                 return;
             }
@@ -109,7 +109,7 @@ export class GamesService {
                 const existingSocket = this.gameConnections.get(gameId)?.get(playerId);
                 if (existingSocket) {
                     console.log(`Player ${playerId} is already connected to game ${gameId}. Disconnecting previous connection.`);
-                    existingSocket.emit("game_message", new StatusOutgoingMessage("ERROR", "You have been disconnected because you logged in from another device."));
+                    existingSocket.emit("game_message", new StatusOutgoingMessage("WARNING", "You have been disconnected because you logged in from another device."));
                     existingSocket.disconnect();
                 }
                 this.gameConnections.get(gameId)?.delete(playerId);
