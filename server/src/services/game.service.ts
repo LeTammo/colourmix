@@ -4,7 +4,6 @@ import { ROUND_TIME_IN_SECONDS } from '../lib/constants';
 import { GameState, Player } from "../../../shared/models/gamestate";
 import { IncomingMessage, ChatIncomingMessage, StartRoundIncomingMessage, CardsPickedIncomingMessage, StartRoundOutgoingMessage, ChatOutgoingMessage, EndRoundOutgoingMessage, NewRoundIncomingMessage, NewRoundOutgoingMessage, TimerUpdateOutgoingMessage, StatusOutgoingMessage } from '../../../shared/models/messages';
 import { Socket, Server } from 'socket.io';
-import { UserWithoutPassword } from '../../../shared/models/user';
 import { Card } from '../../../shared/models/color';
 import { calculateHex, colors } from '../../../shared/lib/color';
 
@@ -19,7 +18,7 @@ import { calculateHex, colors } from '../../../shared/lib/color';
  * - "end_round": Emitted when a round ends.
  * - "game_over": Emitted when the game is over.
  */
-export class Game extends EventEmitter {
+export class GameService extends EventEmitter {
     constructor(
         private readonly io: Server,
         public readonly gameState: GameState = new GameState(),

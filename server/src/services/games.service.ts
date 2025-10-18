@@ -1,11 +1,11 @@
 import { DefaultEventsMap, Server, Socket } from "socket.io";
-import { Game } from "./gamestate.service";
+import { GameService } from "./game.service";
 import { UserWithoutPassword } from "../../../shared/models/user";
 import { IncomingMessage, StatusOutgoingMessage } from "../../../shared/models/messages";
 
 export class GamesService {
 
-    private games: Map<string, Game>;
+    private games: Map<string, GameService>;
     private io: Server;
     private users: UserWithoutPassword[];
     private gameConnections: Map<string, Map<string, Socket>> = new Map();
@@ -14,7 +14,7 @@ export class GamesService {
     constructor(socketServer: Server, users: UserWithoutPassword[]) {
         this.io = socketServer;
         this.users = users;
-        this.games = new Map<string, Game>();
+        this.games = new Map<string, GameService>();
         this.initializeSocketHandlers();
     }
 
@@ -202,19 +202,19 @@ export class GamesService {
         game.handleMessage(socket, message);
     }
 
-    createGame(gameId: string): Game {
+    createGame(gameId: string): GameService {
         if (this.games.has(gameId)) {
             throw new Error("Game with this ID already exists: " + gameId);
         }
 
-        const newGame = new Game(this.io);
+        const newGame = new GameService(this.io);
         this.games.set(gameId, newGame);
         this.gameConnections.set(gameId, new Map());
         console.log("Created new game with ID:", gameId);
         return newGame;
     }
 
-    getGame(gameId: string): Game | undefined {
+    getGame(gameId: string): GameService | undefined {
         return this.games.get(gameId);
     }
 }
