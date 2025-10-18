@@ -12,16 +12,6 @@ import jwt from "jsonwebtoken";
 import { IUser, JwtPayload, User, UserWithoutPassword } from "../../shared/models/user";
 import { GamesService } from "./services/games.service";
 
-
-// Extend Express Request type to include 'user'
-declare global {
-  namespace Express {
-    interface Request {
-      user?: User;
-    }
-  }
-}
-
 if (!process.env.SERVER_PORT) {
   throw new Error("SERVER_PORT is not defined in environment variables");
 }
@@ -92,13 +82,13 @@ passport.use(
         const user = Users.find(u => u.username === username);
 
         if (!user) {
-          return done(null, false, { message: 'User not found' });
+          return done(null, false, { message: 'Unauthorized' });
         }
 
         const validate = user.password === password;
 
         if (!validate) {
-          return done(null, false, { message: 'Wrong Password' });
+          return done(null, false, { message: 'Unauthorized' });
         }
 
         return done(null, { id: user.id, username: user.username }, { message: 'Logged in Successfully' });
@@ -120,6 +110,14 @@ passport.use('jwt', new JwtStrategy(options, function (jwt_payload: JwtPayload, 
   }
 }));
 
+
+app.get('/player/games', passport.authenticate('jwt', { session: false }), (req, res) => {
+  // passport.authenticate('jwt') already rejects unauthenticated requests.
+  // `req.user` is typed via `src/types/express.d.ts` and should be present here.
+  const playerId = (req.user as IUser).id;
+  const games = gamesService.getGamesByPlayerId(playerId).map(g => g.getOutgoingGameState(playerId));
+  res.json(games);
+});
 
 app.get('/login', passport.authenticate('jwt', { session: false }), (req, res) => {
   res.json({ user: req.user });

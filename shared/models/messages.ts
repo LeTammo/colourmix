@@ -1,5 +1,5 @@
 import type { Card } from "./color";
-import { GameState } from "./gamestate";
+import { GameState, GameStateOutgoing } from "./gamestate";
 
 export interface IncomingMessage {
     type: "CHAT" | "CARDS_PICKED" | "START_ROUND" | "NEW_ROUND";
@@ -25,25 +25,7 @@ export interface CardsPickedIncomingMessage extends IncomingMessage {
 
 //-------------------------------------------------------------
 
-export interface GameStateOutgoing {
-    players: {
-        [id: string]: {
-            isHost: boolean;
-            name: string;
-            score: number;
-        }
-    };
-    timer: number;
-    round: number;
-    maxRounds: number;
-    rounds: {
-        picks: { [playerId: string]: Card[] };
-        targetCards: Card[] | null;
-        targetCardsNumber: number;
-        targetColor: string | null;
-        state: "waiting" | "playing" | "finished";
-    }[];
-}
+
 
 export abstract class OutgoingMessage {
     id: string;
@@ -62,23 +44,7 @@ export class GameStateOutgoingMessage extends OutgoingMessage {
     constructor(gameState: GameState, playerId: string) {
         super("GAME_STATE");
         this.playerId = playerId;
-        this.gameState = {
-            players: gameState.players.reduce((acc, p) => {
-                acc[p.id] = { isHost: p.isHost, name: p.name, score: p.score };
-                return acc;
-            }, {} as GameStateOutgoing["players"]),
-            timer: gameState.timer,
-            round: gameState.round,
-            maxRounds: gameState.maxRounds,
-            rounds: gameState.rounds.map(r => ({
-                // Only include player picks by playerId
-                picks: r.state === "finished" ? r.picks : (r.picks[playerId] ? { [playerId]: r.picks[playerId] } : {}),
-                targetCards: r.state === "finished" ? r.targetCards : null,
-                targetColor: r.state === "waiting" ? null : r.targetColor,
-                state: r.state,
-                targetCardsNumber: r.state !== "waiting" ? r.targetCards.length : 0
-            }))
-        }
+        this.gameState = gameState.toGameStateOutgoing(playerId);
     }
 }
 

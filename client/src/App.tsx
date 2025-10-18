@@ -427,7 +427,7 @@ function App() {
 
                                 >
                                     <div className="card-text p-2 font-bold text-white text-shadow-test">
-                                        {state !== "waiting" ? `${gameState.rounds[gameState.round - 1].targetCardsNumber} Cards` : ""}
+                                        {state !== "waiting" && gameState.rounds[gameState.round - 1].targetCardsNumber !== null ? `${gameState.rounds[gameState.round - 1].targetCardsNumber} Cards` : ""}
                                     </div>
                                 </div>
                             </div>

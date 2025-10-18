@@ -207,11 +207,21 @@ export class GamesService {
             throw new Error("Game with this ID already exists: " + gameId);
         }
 
-        const newGame = new GameService(this.io);
-        this.games.set(gameId, newGame);
-        this.gameConnections.set(gameId, new Map());
-        console.log("Created new game with ID:", gameId);
+        const newGame = new GameService(this.io, gameId);
+        this.games.set(newGame.gameState.gameId, newGame);
+        this.gameConnections.set(newGame.gameState.gameId, new Map());
+        console.log("Created new game with ID:", newGame.gameState.gameId);
         return newGame;
+    }
+
+    getGamesByPlayerId(playerId: string): GameService[] {
+        const games: GameService[] = [];
+        for (const game of this.games.values()) {
+            if (game.getPlayerById(playerId)) {
+                games.push(game);
+            }
+        }
+        return games;
     }
 
     getGame(gameId: string): GameService | undefined {

@@ -1,7 +1,7 @@
 import { EventEmitter } from 'stream';
 import { createRandomColor } from '../lib/color';
 import { ROUND_TIME_IN_SECONDS } from '../lib/constants';
-import { GameState, Player } from "../../../shared/models/gamestate";
+import { GameState, GameStateOutgoing, Player } from "../../../shared/models/gamestate";
 import { IncomingMessage, ChatIncomingMessage, StartRoundIncomingMessage, CardsPickedIncomingMessage, StartRoundOutgoingMessage, ChatOutgoingMessage, EndRoundOutgoingMessage, NewRoundIncomingMessage, NewRoundOutgoingMessage, TimerUpdateOutgoingMessage, StatusOutgoingMessage } from '../../../shared/models/messages';
 import { Socket, Server } from 'socket.io';
 import { Card } from '../../../shared/models/color';
@@ -21,7 +21,8 @@ import { calculateHex, colors } from '../../../shared/lib/color';
 export class GameService extends EventEmitter {
     constructor(
         private readonly io: Server,
-        public readonly gameState: GameState = new GameState(),
+        gameId: string = crypto.randomUUID(), 
+        public readonly gameState: GameState = new GameState(gameId),
         private chatHistory: ChatOutgoingMessage[] = [],
     ) {
         super()
@@ -265,7 +266,7 @@ export class GameService extends EventEmitter {
             targetColor: calculateHex(targetCards),
             state: "waiting",
         });
-        this.gameState.timer = ROUND_TIME_IN_SECONDS;
+        this.gameState.timer = this.gameState.timerDuration;
 
         return this.gameState.rounds[this.gameState.round - 1];
     }
@@ -307,6 +308,14 @@ export class GameService extends EventEmitter {
 
     getGameState(): GameState {
         return this.gameState;
+    }
+
+    getOutgoingGameState(playerId: string): GameStateOutgoing {
+        return this.gameState.toGameStateOutgoing(playerId);
+    }
+
+    getOutgoingGameStateMessage(playerId: string) {
+        return this.gameState.toGameStateOutgoingMessage(playerId);
     }
 
     getPlayerById(playerId: string): Player | undefined {
