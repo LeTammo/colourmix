@@ -22,7 +22,7 @@ export class GameService extends EventEmitter {
     constructor(
         private readonly io: Server,
         public readonly gameState: GameState = new GameState(),
-        private chatHistory: ChatIncomingMessage[] = [],
+        private chatHistory: ChatOutgoingMessage[] = [],
     ) {
         super()
         this.createNewRound();
@@ -30,20 +30,24 @@ export class GameService extends EventEmitter {
 
 
     handleMessage(socket: Socket, message: IncomingMessage) {
-        console.log("Received message from", socket.id, ":", message);
+        console.log("Received message from", socket.user?.id, "=>", message);
 
         switch (message.type) {
 
             case "CHAT":
+                // TODO: Validate message
                 this.handleChatMessage(socket, message as ChatIncomingMessage);
                 break;
             case "CARDS_PICKED":
+                // TODO: Validate message
                 this.handleCardsPickedMessage(socket, message as CardsPickedIncomingMessage);
                 break;
             case "START_ROUND":
+                // TODO: Validate message
                 this.handleStartRoundMessage(socket, message as StartRoundIncomingMessage);
                 break;
             case "NEW_ROUND":
+                // TODO: Validate message
                 this.handleNewRoundMessage(socket, message as NewRoundIncomingMessage);
                 break;
             default:
@@ -52,18 +56,17 @@ export class GameService extends EventEmitter {
     }
 
     private handleChatMessage(socket: Socket, message: ChatIncomingMessage) {
-        this.chatHistory.push(message);
-
-        const outMessage = new ChatOutgoingMessage(
-            this.getPlayerById(socket.user?.id)?.name || "Unknown",
-            message.content,
-        );
-
         if (!socket.gameId) {
             console.error("Socket has no gameId. Cannot broadcast chat message.");
             return;
         }
 
+        const outMessage = new ChatOutgoingMessage(
+            this.getPlayerById(socket.user?.id)?.name || "Unknown",
+            message.content,
+        );
+        
+        this.chatHistory.push(outMessage);
         this.io.to(socket.gameId).emit("game_message", outMessage);
         this.emit("chat_message", outMessage);
         // Optionally: emit event or notify listeners
@@ -279,7 +282,7 @@ export class GameService extends EventEmitter {
         this.gameState.players = this.gameState.players.filter(p => p.id !== playerId);
     }
 
-    getChatHistory(): ChatIncomingMessage[] {
+    getChatHistory(): ChatOutgoingMessage[] {
         return [...this.chatHistory];
     }
 
