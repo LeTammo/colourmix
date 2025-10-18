@@ -92,6 +92,17 @@ export class GamesService {
                 return;
             }
 
+            // Check if the player is already in the game before possibly adding them below.
+            // This is intentional: we want to block joining if the game has started and the player is not yet present.
+            const player = game.getPlayerById(playerId);
+            // Accessing the first round's state; safe even if rounds is empty due to optional chaining.
+            const firstRoundState = game.gameState.rounds[0]?.state
+            if (!player && firstRoundState && firstRoundState !== "waiting") {
+                console.error("Game already started. Connection rejected for player:", playerId);
+                socket.emit("game_message", new StatusOutgoingMessage("ERROR", "Game already started. You cannot join now."));
+                socket.disconnect();
+                return;
+            }
 
             if (this.gameConnections.has(gameId) && this.gameConnections.get(gameId)?.has(playerId)) {
                 // Disconnect previous socket
@@ -111,7 +122,7 @@ export class GamesService {
             // Store the new socket connection
             this.gameConnections.get(gameId)?.set(playerId, socket);
 
-
+            
 
             // Add player to gamestate
             // Make first player the host
