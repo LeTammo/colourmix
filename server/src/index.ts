@@ -119,6 +119,8 @@ app.get('/player/games', passport.authenticate('jwt', { session: false }), (req,
   res.json(games);
 });
 
+// TODO: Add create game endpoint
+
 app.get('/login', passport.authenticate('jwt', { session: false }), (req, res) => {
   res.json({ user: req.user });
 });
@@ -201,9 +203,32 @@ const gamesService = new GamesService(io, Users.map(u => new UserWithoutPassword
 
 
 // For testing purposes, create two games on server start
+const firstUser = Users[0];
 
-gamesService.createGame("first-game")
-gamesService.createGame("second-game")
+if (!firstUser) {
+  throw new Error("First user not found");
+}
+
+gamesService.createGame("first-game", firstUser.id, {
+  gameTitle: "First Game",
+  minCards: 2,
+  maxCards: 4,
+  timerDuration: 15,
+  maxPlayers: 4,
+  maxRounds: 2,
+  withInviteCode: true,
+});
+
+// Create second game with only first user as player
+gamesService.createGame("second-game", firstUser.id, {
+  gameTitle: "Second Game",
+  minCards: 2,
+  maxCards: 2,
+  timerDuration: 20,
+  maxPlayers: 1,
+  maxRounds: 2,
+  withInviteCode: false,
+});
 
 
 server.listen({ host: HOST, port: PORT }, () => console.log(`Server running on http://${HOST}:${PORT}`));

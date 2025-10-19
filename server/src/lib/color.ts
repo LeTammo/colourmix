@@ -1,9 +1,12 @@
 import { combineColors } from "../../../shared/lib/color";
-import { Card, CMYKColor, ColorData } from "../../../shared/models/color";
-import { MIN_SELECTION_COUNT, MAX_SELECTION_COUNT } from "./constants";
+import { Card, CMYKColor } from "../../../shared/models/color";
+import { colors } from "../../../shared/lib/color";
 
+export function createRandomColor(minCount: number, maxCount: number): Map<Card, CMYKColor> {
+    if (minCount < 1 || maxCount < 1 || minCount > maxCount) {
+        throw new Error("Invalid color selection range.");
+    }
 
-export function createRandomColor(colors: Map<Card, CMYKColor>): Map<Card, CMYKColor> {
     const keys = [...colors.keys()];
 
     if (keys.length === 0) {
@@ -12,7 +15,7 @@ export function createRandomColor(colors: Map<Card, CMYKColor>): Map<Card, CMYKC
     }   
 
     // randomize order of keys by using sort 
-    const numColors = MIN_SELECTION_COUNT + Math.floor(Math.random() * (MAX_SELECTION_COUNT - MIN_SELECTION_COUNT + 1));
+    const numColors = minCount + Math.floor(Math.random() * (maxCount - minCount + 1));
 
     let chosen: Card[] = [];
 
@@ -30,8 +33,6 @@ export function createRandomColor(colors: Map<Card, CMYKColor>): Map<Card, CMYKC
 
         isAllowed = checkColorsAllowed(chosen);
     }
-
-    console.log("Chosen Cards: ", chosen);
 
     return new Map(chosen.map(k => [k, colors.get(k)!]));
 }

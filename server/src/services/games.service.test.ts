@@ -85,8 +85,23 @@ describe('GamesService socket initialization', () => {
         const mockServer: any = new MockServer();
         const service = new GamesService(mockServer, users);
 
+        const user = users[0];
+
+        if (!user) {
+            throw new Error("User not found");
+        }
+
+
         // create game so it exists
-        service.createGame('first-game');
+        service.createGame('first-game', user.id, {
+            gameTitle: "Test Game",
+            minCards: 2,
+            maxCards: 4,
+            timerDuration: 15,
+            maxPlayers: 4,
+            maxRounds: 2,
+            withInviteCode: false,
+        });
 
         const socket = makeMockSocket({ user: { id: 'p1', username: 'u1' }, handshake: { auth: { gameId: 'first-game' } } });
         mockServer.simulateConnection(socket);
@@ -103,7 +118,21 @@ describe('GamesService socket initialization', () => {
         const mockServer: any = new MockServer();
         const service = new GamesService(mockServer, users);
 
-        service.createGame('first-game');
+        const user = users[0];
+
+        if (!user) {
+            throw new Error("User not found");
+        }
+
+        service.createGame('first-game', user.id, {
+            gameTitle: "Test Game",
+            minCards: 2,
+            maxCards: 4,
+            timerDuration: 15,
+            maxPlayers: 4,
+            maxRounds: 2,
+            withInviteCode: false,
+        });
 
         const firstSocket = makeMockSocket({ id: 's1', user: { id: 'p1', username: 'u1' }, handshake: { auth: { gameId: 'first-game' } } });
         mockServer.simulateConnection(firstSocket);

@@ -73,7 +73,7 @@ const GamesList: React.FC = () => {
                         <div key={id} className="border-2 rounded-2xl shadow-lg border-gray-400 flex flex-col p-4 bg-white">
                             <div className="flex items-center justify-between mb-2">
                                 <div className="text-lg font-semibold">
-                                    <Link to={`/games/${id}`}>Game #{idx + 1}</Link>
+                                    <Link to={`/games/${id}`}>{g.gameTitle || "Untitled Game"}</Link>
                                     <div className="text-xs text-gray-500">[{g.gameId}]</div>
                                 </div>
                                 <div className="flex items-center gap-3">
@@ -89,6 +89,10 @@ const GamesList: React.FC = () => {
                                 <>
                                     <div className="mb-3">
                                         <div className="text-sm text-gray-600">Round Duration: <span className="font-medium">{g.timerDuration} seconds</span></div>
+                                        <div className="text-sm text-gray-600">Max Players: <span className="font-medium">{g.maxPlayers}</span></div>
+                                        <div className="text-sm text-gray-600">Min Cards: <span className="font-medium">{g.minCards}</span></div>
+                                        <div className="text-sm text-gray-600">Max Cards: <span className="font-medium">{g.maxCards}</span></div>
+                                        <div className="text-sm text-gray-600">With Invite Code: <span className="font-medium">{g.withInviteCode ? 'Yes' : 'No'}</span></div>
                                     </div>
 
                                     <div className="mb-3">

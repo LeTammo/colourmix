@@ -1,11 +1,10 @@
 import { EventEmitter } from 'stream';
 import { createRandomColor } from '../lib/color';
-import { ROUND_TIME_IN_SECONDS } from '../lib/constants';
-import { GameState, GameStateOutgoing, Player } from "../../../shared/models/gamestate";
+import { CreateGamePayload, GameState, GameStateOutgoing, Player } from "../../../shared/models/gamestate";
 import { IncomingMessage, ChatIncomingMessage, StartRoundIncomingMessage, CardsPickedIncomingMessage, StartRoundOutgoingMessage, ChatOutgoingMessage, EndRoundOutgoingMessage, NewRoundIncomingMessage, NewRoundOutgoingMessage, TimerUpdateOutgoingMessage, StatusOutgoingMessage } from '../../../shared/models/messages';
 import { Socket, Server } from 'socket.io';
 import { Card } from '../../../shared/models/color';
-import { calculateHex, colors } from '../../../shared/lib/color';
+import { calculateHex } from '../../../shared/lib/color';
 
 /**
  * Main Game class handling game logic, state, and communication via Socket.IO.
@@ -19,13 +18,17 @@ import { calculateHex, colors } from '../../../shared/lib/color';
  * - "game_over": Emitted when the game is over.
  */
 export class GameService extends EventEmitter {
+    private gameState: GameState;
+    private chatHistory: ChatOutgoingMessage[];
+
     constructor(
         private readonly io: Server,
-        gameId: string = crypto.randomUUID(), 
-        public readonly gameState: GameState = new GameState(gameId),
-        private chatHistory: ChatOutgoingMessage[] = [],
+        gameId: string = crypto.randomUUID(),
+        options: CreateGamePayload
     ) {
         super()
+        this.gameState = new GameState(gameId, options);
+        this.chatHistory = [];
         this.createNewRound();
     }
 
@@ -66,7 +69,7 @@ export class GameService extends EventEmitter {
             this.getPlayerById(socket.user?.id)?.name || "Unknown",
             message.content,
         );
-        
+
         this.chatHistory.push(outMessage);
         this.io.to(socket.gameId).emit("game_message", outMessage);
         this.emit("chat_message", outMessage);
@@ -114,25 +117,26 @@ export class GameService extends EventEmitter {
         if (previousRound === undefined) {
             if (this.gameState.round !== 0) {
                 console.error("Previous round not found, but round number is not zero.");
-                return
+                return;
             }
         } else {
             if (previousRound.state !== "finished" && this.gameState.round !== 0) {
                 console.warn("Cannot start a new round before the previous one is finished.");
-                return
+                return;
             }
         }
 
-        if (this.gameState.round >= this.gameState.maxRounds) {
-            console.warn("Maximum number of rounds reached.");
+        try {
+            const newRound = this.createNewRound();
+
+            if (!newRound) {
+                socket.emit("game_message", new StatusOutgoingMessage("WARNING", "Maximum number of rounds reached. Cannot start a new round."));
+                return;
+            }
+        } catch (error) {
+            console.error("Error creating new round:", error);
+            socket.emit("game_message", new StatusOutgoingMessage("ERROR", "Error creating new round."));
             return;
-        }
-
-        const newRound = this.createNewRound();
-
-        if (!newRound) {
-            console.error("Current round not found after starting a new round.");
-            return
         }
 
         const newRoundMessage = new NewRoundOutgoingMessage(
@@ -176,8 +180,8 @@ export class GameService extends EventEmitter {
         }
 
         currentRound.state = "playing";
-        
-        
+
+
         // Start countdown timer
         const timerInterval = setInterval(() => {
             if (this.gameState.timer > 1) {
@@ -194,7 +198,7 @@ export class GameService extends EventEmitter {
                 clearInterval(timerInterval);
             }
         }, 1000);
-        
+
         if (!socket.gameId) {
             console.error("Socket has no gameId. Cannot broadcast start round message.");
             return;
@@ -217,7 +221,7 @@ export class GameService extends EventEmitter {
         this.calculateScores(currentRound.picks, currentRound.targetCards);
 
         this.emit("end_round", this.gameState);
-        
+
         if (!socket.gameId) {
             console.error("Socket has no gameId. Cannot broadcast end round message.");
             return;
@@ -231,7 +235,7 @@ export class GameService extends EventEmitter {
                 acc[p.id] = p.score;
                 return acc;
             }, {} as { [playerId: string]: number }
-        )));
+            )));
 
         if (this.gameState.round >= this.gameState.maxRounds) {
             this.emit("game_over", this.gameState);
@@ -257,7 +261,14 @@ export class GameService extends EventEmitter {
     }
 
     createNewRound() {
-        const targetCards = [...createRandomColor(colors).keys().map(c => c)];
+        if (this.gameState.round >= this.gameState.maxRounds) {
+            console.warn("Maximum number of rounds reached. Cannot create new round.");
+            return;
+        }
+
+        const targetCards = [...createRandomColor(this.gameState.minCards, this.gameState.maxCards).keys().map(c => c)];
+
+        console.log("Target Cards for game " + this.gameState.gameId + ": ", targetCards);
 
         this.gameState.round += 1;
         this.gameState.rounds.push({
@@ -272,11 +283,27 @@ export class GameService extends EventEmitter {
     }
 
     addPlayerIfNotExist(playerId: string, name: string, isHost: boolean = false) {
-        if (this.getPlayerById(playerId)) {
+        const player = this.getPlayerById(playerId);
+
+        if (player) {
             // Player already exists, no need to add
-            return;
+            return player;
         }
-        this.gameState.players.push({ id: playerId, name, score: 0, isHost});
+
+        if (this.gameState.players.length >= this.gameState.maxPlayers) {
+            throw new Error("Maximum number of players reached. Cannot add more players.");
+        }
+
+        const newPlayer: Player = {
+            id: playerId,
+            name: name,
+            isHost: isHost,
+            score: 0,
+        };
+
+        this.gameState.players.push(newPlayer);
+
+        return newPlayer;
     }
 
     removePlayerById(playerId: string) {

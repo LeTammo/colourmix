@@ -2,6 +2,16 @@
 import type { Card } from "./color";
 import { GameStateOutgoingMessage } from "./messages";
 
+export interface CreateGamePayload {
+    gameTitle: string;
+    maxPlayers: number;
+    timerDuration: number;
+    minCards: number;
+    maxCards: number;
+    maxRounds: number;
+    withInviteCode: boolean;
+}
+
 export interface Player {
     id: string;
     isHost: boolean;
@@ -20,31 +30,37 @@ export interface Round {
     targetColor: string;
     state: "waiting" | "playing" | "finished",
 }
-
+//TODO: Exclude GameState from shared folder??
 export class GameState {
     public gameId: string;
+    public gameTitle: string;
     public players: Player[];
-    public timerDuration: number;
+    public maxPlayers: number;
     public timer: number;
+    public timerDuration: number;
+    public minCards: number;
+    public maxCards: number;
     public round: number;
-    public maxRounds: number;
     public rounds: Round[];
+    public maxRounds: number;
+    public withInviteCode: boolean;
 
     constructor(
         gameId: string,
-        players: Player[] = [],
-        round: number = 0,
-        timerDuration: number = 20,
-        maxRounds: number = 5,
-        rounds: Round[] = []
+        options: CreateGamePayload,
     ) {
         this.gameId = gameId;
-        this.players = players;
-        this.timerDuration = timerDuration;
-        this.timer = timerDuration;
-        this.round = round;
-        this.maxRounds = maxRounds;
-        this.rounds = rounds;
+        this.gameTitle = options.gameTitle;
+        this.withInviteCode = options.withInviteCode;
+        this.players = [];
+        this.maxPlayers = options.maxPlayers;
+        this.timerDuration = options.timerDuration;
+        this.minCards = options.minCards;
+        this.maxCards = options.maxCards;
+        this.timer = options.timerDuration;
+        this.maxRounds = options.maxRounds;
+        this.round = 0; // Maybe replace it with rounds.length-1?
+        this.rounds = []
     }
 
     public toGameStateOutgoingMessage(playerId: string): GameStateOutgoingMessage {
@@ -55,14 +71,19 @@ export class GameState {
     public toGameStateOutgoing(playerId: string): GameStateOutgoing {
         return {
             gameId: this.gameId,
+            gameTitle: this.gameTitle,
             players: this.players.reduce((acc, p) => {
                 acc[p.id] = { isHost: p.isHost, name: p.name, score: p.score };
                 return acc;
             }, {} as GameStateOutgoing["players"]),
             timer: this.timer,
             timerDuration: this.timerDuration,
-            round: this.round,
+            minCards: this.minCards,
+            maxCards: this.maxCards,
+            maxPlayers: this.maxPlayers,
+            withInviteCode: this.withInviteCode,
             maxRounds: this.maxRounds,
+            round: this.round,
             rounds: this.rounds.map(r => ({
                 // Only include player picks by playerId
                 picks: r.state === "finished" ? r.picks : (r.picks[playerId] ? { [playerId]: r.picks[playerId] } : {}),
@@ -77,6 +98,7 @@ export class GameState {
 
 export interface GameStateOutgoing {
     gameId: string;
+    gameTitle: string;
     players: {
         [id: string]: {
             isHost: boolean;
@@ -86,8 +108,12 @@ export interface GameStateOutgoing {
     };
     timer: number;
     timerDuration: number;
-    round: number;
     maxRounds: number;
+    minCards: number;
+    maxCards: number;
+    maxPlayers: number;
+    withInviteCode: boolean;
+    round: number;
     rounds: {
         picks: { [playerId: string]: Card[] };
         targetCards: Card[] | null;

@@ -412,7 +412,7 @@ function App() {
                 {connectionStatus === "disconnected" && (<div className="text-center text-gray-600">Disconnected from server. Please reload the page.</div>)}
                 {connectionStatus === "connected" && gameState && (<div className="game-container">
                     <header className="game-header text-3xl text-center font-extrabold">
-                        <h1>CMYK Color Mixer</h1>
+                        <h1>{gameState.gameTitle || "Untitled Game"}</h1>
                     </header>
                     <section className="goal-section flex justify-around my-4 border-2 p-8 border-gray-400 rounded-2xl
                                         shadow-lg bg-white items-center">
@@ -433,7 +433,7 @@ function App() {
                             </div>
                         </div>
                         <div>
-                            <div className={`timer-display flex flex-col items-center cursor-pointer ${isHost || state === "playing" ? "" : "pointer-events-none opacity-30"}`}
+                            <div className={`timer-display flex flex-col items-center cursor-pointer ${((isHost || state === "playing") && !(state === "finished" && (gameState.round) >= (gameState.maxRounds))) ? "" : "pointer-events-none opacity-30"}`}
                                 onClick={() => startNewGame()}
                             >
                                 <div className={`timer-circle w-24 h-24 border-4 rounded-full bg-white shadow-md
@@ -444,7 +444,8 @@ function App() {
                                     </span>
                                 </div>
                             </div>
-                            <div className="text-center mt-2 font-semibold">{`Round ${gameState.round} / ${gameState.maxRounds}`}</div>
+                            <div className="text-center mt-2 font-semibold">{`Round ${gameState.round} / ${gameState.maxRounds}`}                            
+                            </div>
                         </div>
                         <div className="color-display flex flex-col items-center">
                             <h2 className="text-2xl font-semibold text-center pb-3">Your Color</h2>

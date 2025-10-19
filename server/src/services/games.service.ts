@@ -2,6 +2,7 @@ import { DefaultEventsMap, Server, Socket } from "socket.io";
 import { GameService } from "./game.service";
 import { UserWithoutPassword } from "../../../shared/models/user";
 import { IncomingMessage, StatusOutgoingMessage } from "../../../shared/models/messages";
+import { CreateGamePayload, Player } from "../../../shared/models/gamestate";
 
 export class GamesService {
 
@@ -92,11 +93,22 @@ export class GamesService {
                 return;
             }
 
+
+
             // Check if the player is already in the game before possibly adding them below.
             // This is intentional: we want to block joining if the game has started and the player is not yet present.
             const player = game.getPlayerById(playerId);
+
+            // Check if the game is full only if the player is not already in the game
+            if (!player && game.getGameState().players.length >= game.getGameState().maxPlayers) {
+                console.error("Game is full. Connection rejected for player:", playerId);
+                socket.emit("game_message", new StatusOutgoingMessage("WARNING", "Game is full. You cannot join this game."));
+                socket.disconnect();
+                return;
+            }
+
             // Accessing the first round's state; safe even if rounds is empty due to optional chaining.
-            const firstRoundState = game.gameState.rounds[0]?.state
+            const firstRoundState = game.getGameState().rounds[0]?.state
             if (!player && firstRoundState && firstRoundState !== "waiting") {
                 console.error("Game already started. Connection rejected for player:", playerId);
                 socket.emit("game_message", new StatusOutgoingMessage("WARNING", "Game already started. You cannot join now."));
@@ -122,11 +134,16 @@ export class GamesService {
             // Store the new socket connection
             this.gameConnections.get(gameId)?.set(playerId, socket);
 
-            
-
             // Add player to gamestate
             // Make first player the host
-            game.addPlayerIfNotExist(playerId, user.username, game.gameState.players.length === 0);
+            try {
+                game.addPlayerIfNotExist(playerId, user.username, game.getGameState().players.length === 0);
+            } catch (error) {
+                console.error("Error adding player to game:", error);
+                socket.emit("game_message", new StatusOutgoingMessage("ERROR", "Could not add you to the game. Please try again later."));
+                socket.disconnect();
+                return;
+            }
 
 
             socket.join(socket.gameId);
@@ -134,10 +151,11 @@ export class GamesService {
 
             socket.emit("game_message", new StatusOutgoingMessage("SUCCESS", "Successfully connected to the game server."));
 
-            socket.emit("game_message", game.gameState.toGameStateOutgoingMessage(playerId));
+            socket.emit("game_message", game.getGameState().toGameStateOutgoingMessage(playerId));
 
 
             socket.on("game_message", (data) => {
+                // TODO: Validate message format
                 if (!data || !data.type) {
                     console.error("Invalid message format:", data);
                     return;
@@ -162,7 +180,7 @@ export class GamesService {
         // TODO: Add more detailed validation based on message types
         if (!message || !message.type) {
             console.error("Invalid message format:", message);
-            socket.emit("game_message", new StatusOutgoingMessage("ERROR", "Invalid message format."));
+            socket.emit("game_message", new StatusOutgoingMessage("ERROR", "Invalid Message format detected."));
             return;
         }
 
@@ -213,15 +231,29 @@ export class GamesService {
         game.handleMessage(socket, message);
     }
 
-    createGame(gameId: string): GameService {
+    createGame(gameId: string, playerId: string, options: CreateGamePayload): GameService {
         if (this.games.has(gameId)) {
             throw new Error("Game with this ID already exists: " + gameId);
         }
 
-        const newGame = new GameService(this.io, gameId);
-        this.games.set(newGame.gameState.gameId, newGame);
-        this.gameConnections.set(newGame.gameState.gameId, new Map());
-        console.log("Created new game with ID:", newGame.gameState.gameId);
+        const newGame = new GameService(this.io, gameId, options);
+
+        const hostUser = this.users.find(u => u.id === playerId);
+
+        let player: Player | undefined;
+
+        if (hostUser) {
+            player = newGame.addPlayerIfNotExist(hostUser.id, hostUser.username, true);
+        }
+
+        if (player) {
+            console.log("Added host player to the game (" + gameId + "):", player);
+        }
+
+        this.games.set(newGame.getGameState().gameId, newGame);
+        this.gameConnections.set(newGame.getGameState().gameId, new Map());
+        console.log("Created new game with ID:", newGame.getGameState().gameId);
+
         return newGame;
     }
 
