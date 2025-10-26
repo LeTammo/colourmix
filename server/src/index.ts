@@ -11,6 +11,7 @@ import { Strategy as JwtStrategy, ExtractJwt } from 'passport-jwt';
 import jwt from "jsonwebtoken";
 import { IUser, JwtPayload, User, UserWithoutPassword } from "../../shared/models/user";
 import { GamesService } from "./services/games.service";
+import { validateCreateGame } from "./lib/validation";
 
 if (!process.env.SERVER_PORT) {
   throw new Error("SERVER_PORT is not defined in environment variables");
@@ -51,22 +52,36 @@ const PLAYER2_ID = process.env.SERVER_PLAYER2_ID;
 const PLAYER1_USERNAME = process.env.SERVER_PLAYER1_USERNAME;
 const PLAYER2_USERNAME = process.env.SERVER_PLAYER2_USERNAME;
 
-
-
-const app = express()
-const server = createServer(app);
-
-app.use(cors());
-app.use(cookieParser());
-app.use(express.json());
-
-
 // Hardcoded user credentials
 const Users: User[] = [
   new User(PLAYER1_ID, PLAYER1_USERNAME, PLAYER1_PASSWORD),
   new User(PLAYER2_ID, PLAYER2_USERNAME, PLAYER2_PASSWORD)
 ]
 
+
+const app = express()
+const server = createServer(app);
+
+const io = new Server(server, PRODUCTION ? {} : {
+  cors: {
+    origin: "http://localhost:5173",
+    methods: ["GET", "POST"],
+  }
+});
+
+// Extend Socket type to include 'user'
+declare module "socket.io" {
+  interface Socket {
+    user?: any;
+    gameId?: string;
+  }
+}
+
+const gamesService = new GamesService(io, Users.map(u => new UserWithoutPassword(u.id, u.username)));
+
+app.use(cors());
+app.use(cookieParser());
+app.use(express.json());
 app.use(passport.initialize());
 
 // Passport local strategy for username/password
@@ -119,7 +134,20 @@ app.get('/player/games', passport.authenticate('jwt', { session: false }), (req,
   res.json(games);
 });
 
-// TODO: Add create game endpoint
+app.post('/game', passport.authenticate('jwt', { session: false }), (req, res) => {
+  const playerId = (req.user as IUser).id;
+
+  try {
+    const payload = req.body;
+    const validatedPayload = validateCreateGame(payload); // Validate input
+
+    const gameId = crypto.randomUUID();
+    gamesService.createGame(gameId, playerId, validatedPayload);
+    return res.status(201).json({ gameId: gameId });
+  } catch (error) {
+    return res.status(500).json({ message: 'Failed to create game' });
+  }
+});
 
 app.get('/login', passport.authenticate('jwt', { session: false }), (req, res) => {
   res.json({ user: req.user });
@@ -158,20 +186,7 @@ app.post(
   }
 );
 
-const io = new Server(server, PRODUCTION ? {} : {
-  cors: {
-    origin: "http://localhost:5173",
-    methods: ["GET", "POST"],
-  }
-});
 
-// Extend Socket type to include 'user'
-declare module "socket.io" {
-  interface Socket {
-    user?: any;
-    gameId?: string;
-  }
-}
 
 // Authentication Middleware
 io.use((socket, next) => {
@@ -199,7 +214,6 @@ io.use((socket, next) => {
   }
 });
 
-const gamesService = new GamesService(io, Users.map(u => new UserWithoutPassword(u.id, u.username)));
 
 
 // For testing purposes, create two games on server start
@@ -216,7 +230,7 @@ gamesService.createGame("first-game", firstUser.id, {
   timerDuration: 15,
   maxPlayers: 4,
   maxRounds: 2,
-  withInviteCode: true,
+  inviteCode: "aaaa-bbbb"
 });
 
 // Create second game with only first user as player
@@ -227,7 +241,7 @@ gamesService.createGame("second-game", firstUser.id, {
   timerDuration: 20,
   maxPlayers: 1,
   maxRounds: 2,
-  withInviteCode: false,
+  inviteCode: undefined
 });
 
 

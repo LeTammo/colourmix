@@ -18,9 +18,15 @@ const schema: JSONSchemaType<CreateGamePayload> = {
         timerDuration: { type: "integer", minimum: 1, maximum: 60 },
         maxPlayers: { type: "integer", minimum: 1, maximum: 10 },
         maxRounds: { type: "integer", minimum: 1, maximum: 10 },
-        withInviteCode: { type: "boolean" },
+        inviteCode: {
+            type: "string",
+            nullable: true,
+            minLength: 6,
+            maxLength: 32,
+            pattern: "^[A-Za-z0-9-]+$",
+        },
     },
-    required: ["gameTitle", "minCards", "maxCards", "timerDuration", "maxPlayers", "maxRounds", "withInviteCode"],
+    required: ["gameTitle", "minCards", "maxCards", "timerDuration", "maxPlayers", "maxRounds"],
     additionalProperties: false,
 
     // Enforce minCards <= maxCards.

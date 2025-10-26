@@ -100,7 +100,6 @@ describe('GamesService socket initialization', () => {
             timerDuration: 15,
             maxPlayers: 4,
             maxRounds: 2,
-            withInviteCode: false,
         });
 
         const socket = makeMockSocket({ user: { id: 'p1', username: 'u1' }, handshake: { auth: { gameId: 'first-game' } } });
@@ -131,7 +130,6 @@ describe('GamesService socket initialization', () => {
             timerDuration: 15,
             maxPlayers: 4,
             maxRounds: 2,
-            withInviteCode: false,
         });
 
         const firstSocket = makeMockSocket({ id: 's1', user: { id: 'p1', username: 'u1' }, handshake: { auth: { gameId: 'first-game' } } });

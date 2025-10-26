@@ -8,7 +8,6 @@ describe("validateCreateGame", () => {
         timerDuration: 30,
         maxPlayers: 4,
         maxRounds: 5,
-        withInviteCode: false,
     };
 
     test("accepts a valid payload and returns it typed", () => {
@@ -66,12 +65,6 @@ describe("validateCreateGame", () => {
         expect(() => validateCreateGame(payload)).toThrow(/additional properties|extra/);
     });
 
-    test("rejects withInviteCode wrong type", () => {
-        const payload = { ...baseValid, withInviteCode: "false" } as any;
-        expect(() => validateCreateGame(payload)).toThrow(/Invalid create game payload/);
-        expect(() => validateCreateGame(payload)).toThrow(/withInviteCode/);
-    });
-
     test("rejects timerDuration out of range (too small)", () => {
         const payload = { ...baseValid, timerDuration: 0 };
         expect(() => validateCreateGame(payload)).toThrow(/Invalid create game payload/);
@@ -94,5 +87,35 @@ describe("validateCreateGame", () => {
         const payload = { ...baseValid, minCards: 2.5 } as any;
         expect(() => validateCreateGame(payload)).toThrow(/Invalid create game payload/);
         expect(() => validateCreateGame(payload)).toThrow(/minCards/);
+    });
+
+    test("accepts a valid inviteCode when present", () => {
+        const payload = { ...baseValid, inviteCode: "Abc12-" } as any;
+        expect(validateCreateGame(payload)).toEqual(payload);
+    });
+
+    test("rejects inviteCode that is too short", () => {
+        const payload = { ...baseValid, inviteCode: "abc" } as any;
+        expect(() => validateCreateGame(payload)).toThrow(/Invalid create game payload/);
+        expect(() => validateCreateGame(payload)).toThrow(/inviteCode/);
+    });
+
+    test("rejects inviteCode that is too long", () => {
+        const long = "a".repeat(33);
+        const payload = { ...baseValid, inviteCode: long } as any;
+        expect(() => validateCreateGame(payload)).toThrow(/Invalid create game payload/);
+        expect(() => validateCreateGame(payload)).toThrow(/inviteCode/);
+    });
+
+    test("rejects inviteCode with invalid characters", () => {
+        const payload = { ...baseValid, inviteCode: "bad$code" } as any;
+        expect(() => validateCreateGame(payload)).toThrow(/Invalid create game payload/);
+        expect(() => validateCreateGame(payload)).toThrow(/inviteCode/);
+    });
+
+    test("rejects inviteCode with wrong type", () => {
+        const payload = { ...baseValid, inviteCode: 12345 } as any;
+        expect(() => validateCreateGame(payload)).toThrow(/Invalid create game payload/);
+        expect(() => validateCreateGame(payload)).toThrow(/inviteCode/);
     });
 });

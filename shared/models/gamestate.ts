@@ -9,7 +9,7 @@ export interface CreateGamePayload {
     minCards: number;
     maxCards: number;
     maxRounds: number;
-    withInviteCode: boolean;
+    inviteCode: string | undefined; 
 }
 
 export interface Player {
@@ -30,7 +30,8 @@ export interface Round {
     targetColor: string;
     state: "waiting" | "playing" | "finished",
 }
-//TODO: Exclude GameState from shared folder??
+// TODO: Exclude GameState from shared folder??
+// TODO: Add createdAt property
 export class GameState {
     public gameId: string;
     public gameTitle: string;
@@ -43,7 +44,7 @@ export class GameState {
     public round: number;
     public rounds: Round[];
     public maxRounds: number;
-    public withInviteCode: boolean;
+    public inviteCode: string | undefined;
 
     constructor(
         gameId: string,
@@ -51,7 +52,7 @@ export class GameState {
     ) {
         this.gameId = gameId;
         this.gameTitle = options.gameTitle;
-        this.withInviteCode = options.withInviteCode;
+        this.inviteCode = options.inviteCode;
         this.players = [];
         this.maxPlayers = options.maxPlayers;
         this.timerDuration = options.timerDuration;
@@ -81,7 +82,9 @@ export class GameState {
             minCards: this.minCards,
             maxCards: this.maxCards,
             maxPlayers: this.maxPlayers,
-            withInviteCode: this.withInviteCode,
+            withInviteCode: this.inviteCode ? true : false,
+            // add inviteCode only if the player is host
+            inviteCode: this.inviteCode && this.players.find(p => p.id === playerId)?.isHost ? this.inviteCode : undefined,
             maxRounds: this.maxRounds,
             round: this.round,
             rounds: this.rounds.map(r => ({
@@ -113,6 +116,7 @@ export interface GameStateOutgoing {
     maxCards: number;
     maxPlayers: number;
     withInviteCode: boolean;
+    inviteCode: string | undefined;
     round: number;
     rounds: {
         picks: { [playerId: string]: Card[] };
