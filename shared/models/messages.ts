@@ -1,5 +1,5 @@
 import type { Card } from "./color";
-import { GameState, GameStateOutgoing } from "./gamestate";
+import { GameState, type GameStateOutgoing } from "./gamestate";
 
 export interface IncomingMessage {
     type: "CHAT" | "CARDS_PICKED" | "START_ROUND" | "NEW_ROUND";
