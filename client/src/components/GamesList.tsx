@@ -96,6 +96,7 @@ const GamesList: React.FC = () => {
                                     </div>
 
                                     <div className="mb-3">
+                                        {/* TODO: Display (players / max_players) */}
                                         <div className="text-sm font-semibold mb-2">Players:</div>
                                         <div className="flex flex-col gap-2">
                                             {Object.entries(g.players).map(([pid, p]) => (
