@@ -5,11 +5,13 @@ import HideIcon from './HideIcon';
 import ShowIcon from './ShowIcon';
 import RangeSlider from './RangeSlider';
 import type { CreateGamePayload } from '../../../shared/models/gamestate';
+import {randomTitle} from "../lib/gameTitle.ts";
+import Dice from "./Dice.tsx";
 
 const API_URL = import.meta.env.VITE_API_URL as string;
 
 const CreateGame: React.FC = () => {
-	const [gameTitle, setGameTitle] = useState('');
+	const [gameTitle, setGameTitle] = useState(randomTitle);
 	const [maxPlayers, setMaxPlayers] = useState<number>(5);
 	const [timerDuration, setTimerDuration] = useState<number>(20);
 	const [minCards, setMinCards] = useState<number>(2);
@@ -108,20 +110,31 @@ const CreateGame: React.FC = () => {
 			>
 				<h2 className="text-2xl font-bold text-center mb-2">Create Game</h2>
 
-				<label className="block">
+				<label className="block relative">
 					<span className="text-sm font-medium text-gray-700">Game Title</span>
 					<input
 						type="text"
 						value={gameTitle}
 						onChange={e => setGameTitle(e.target.value)}
 						required
-						autoFocus
-						className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring focus:ring-blue-200"
+						className="mt-1 block w-full pl-3 pr-10 py-2 border border-gray-300 rounded-md
+						           focus:outline-none focus:ring focus:ring-blue-600"
 					/>
+					<button
+						type="button"
+						aria-label="Generate random title"
+						onMouseDown={e => e.preventDefault()}
+						onClick={() => setGameTitle(randomTitle())}
+						className="absolute right-2 top-10 -mt-1 p-1 text-gray-600 hover:text-gray-800 active:scale-95 cursor-pointer"
+					>
+						<Dice size={20} fill={'#155dfc'} />
+					</button>
 				</label>
 
 				<div>
-					<label className="block -mb-3 text-sm font-medium text-gray-700">Players: <span className="font-semibold">{maxPlayers}</span></label>
+					<label className="block -mb-3 text-sm font-medium text-gray-700">
+                        Players: <span className="font-semibold">{maxPlayers}</span>
+                    </label>
 					<RangeSlider
 						min={1}
 						max={10}
@@ -133,7 +146,9 @@ const CreateGame: React.FC = () => {
 				</div>
 
 				<div>
-					<label className="block -mb-3 text-sm font-medium text-gray-700">Timer (seconds): <span className="font-semibold">{timerDuration}</span></label>
+					<label className="block -mb-3 text-sm font-medium text-gray-700">
+                        Timer (seconds): <span className="font-semibold">{timerDuration}</span>
+                    </label>
 					<RangeSlider
 						min={10}
 						max={60}
@@ -145,7 +160,9 @@ const CreateGame: React.FC = () => {
 				</div>
 
 				<div className="">
-					<label className="block -mb-3 text-sm font-medium text-gray-700">Cards: <span className="font-semibold">{minCards} to {maxCards}</span></label>
+					<label className="block -mb-3 text-sm font-medium text-gray-700">
+                        Cards: <span className="font-semibold">{minCards} to {maxCards}</span>
+                    </label>
 					<RangeSlider
 						min={2}
 						max={4}
@@ -162,7 +179,9 @@ const CreateGame: React.FC = () => {
 				</div>
 
 				<div>
-					<label className="block -mb-3 text-sm font-medium text-gray-700">Rounds: <span className="font-semibold">{maxRounds}</span></label>
+					<label className="block -mb-3 text-sm font-medium text-gray-700">
+                        Rounds: <span className="font-semibold">{maxRounds}</span>
+                    </label>
 					<RangeSlider
 						min={1}
 						max={10}
@@ -196,7 +215,8 @@ const CreateGame: React.FC = () => {
                             required={withInviteCode}
                             autoComplete="off"
 							onChange={e => setInviteCode(e.target.value)}
-							className="mt-1 block w-full px-3 py-2 pr-20 border border-gray-300 rounded-md focus:outline-none focus:ring focus:ring-blue-200"
+							className="mt-1 block w-full px-3 py-2 pr-20 border border-gray-300 rounded-md
+							           focus:outline-none focus:ring focus:ring-blue-200"
 						/>
 						<button
 							type="button"
