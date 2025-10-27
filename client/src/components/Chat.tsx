@@ -16,18 +16,14 @@ function Chat({players}: {players: GameStateOutgoingMessage["gameState"]["player
         // Ensure the message is of type ChatOutgoingMessage
         if (incoming.type !== "CHAT") return;
         
-        console.log("Received chat message:", incoming);
-        
         setChat((prevChat) => [...prevChat, incoming as ChatOutgoingMessage]);
     }, []);
 
     useEffect(() => {
-
         socket.on("game_message", onGameMessage);
         return () => {
             socket.off("game_message", onGameMessage);
         };
-
     }, [socket, onGameMessage]);
 
     const sendMessage = (e: React.FormEvent<HTMLFormElement>) => {
@@ -41,9 +37,23 @@ function Chat({players}: {players: GameStateOutgoingMessage["gameState"]["player
         }
     };
 
+    const initials = (name: string) => {
+        const parts = name.trim().split(/\s+/);
+        const letters = parts.slice(0, 2).map(p => p[0]?.toUpperCase()).join("");
+        return letters || name.slice(0, 2).toUpperCase();
+    };
+
+    const formatTime = (ts?: number) => {
+        if (!ts) return "";
+        const d = new Date(ts);
+        const hh = d.getHours().toString().padStart(2, "0");
+        const mm = d.getMinutes().toString().padStart(2, "0");
+        return `${hh}:${mm}`;
+    };
 
     const renderSegments = (segments?: ChatSegment[], fallback?: string) => {
         if (!segments || segments.length === 0) {
+            // Plain messages: render as-is without any parsing
             return fallback ?? null;
         }
         return (
@@ -52,7 +62,7 @@ function Chat({players}: {players: GameStateOutgoingMessage["gameState"]["player
                     <span
                         key={idx}
                         className={seg.kind === "correct"
-                            ? "text-green-600 font-semibold"
+                            ? "text-green-700 font-semibold"
                             : seg.kind === "wrong"
                                 ? "text-red-600 font-semibold"
                                 : undefined}
@@ -65,58 +75,97 @@ function Chat({players}: {players: GameStateOutgoingMessage["gameState"]["player
     };
 
     return (
-        <div className="flex flex-col bg-white border-l border-gray-300 shadow-lg">
-            <div className="p-5 border-b border-gray-200 bg-gray-50">
-                <h2 className="text-xl font-semibold text-gray-800">Game</h2>
+        <div className="flex h-full flex-col bg-gray-100">
+            <div className="px-4 pt-4">
+                <div className="border-2 border-gray-300 rounded-xl shadow-sm overflow-hidden">
+                    <div className="flex items-center justify-between px-4 py-3 bg-gray-50 border-b border-gray-200">
+                        <h2 className="text-lg font-bold text-gray-800">Players</h2>
+                    </div>
+                    {players && (
+                        <div className="max-h-60 overflow-y-auto">
+                            <ul className="divide-y divide-gray-200">
+                                {Array.from(Object.entries(players as Record<string, GameStateOutgoingMessage["gameState"]["players"][string]>))
+                                    .sort((a, b) => b[1].score - a[1].score)
+                                    .map(([id, p]) => (
+                                        <li key={id} className="flex items-center gap-3 px-4 py-2">
+                                            <div className="flex items-center gap-3 flex-1 min-w-0">
+                                                <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-sm font-bold">
+                                                    {initials(p.name)}
+                                                </div>
+                                                <div className="truncate text-gray-800">
+                                                    <span className="font-medium">{p.name}</span>
+                                                    {p.isHost && <span title="Host" className="ml-1" aria-label="Host">👑</span>}
+                                                </div>
+                                            </div>
+                                            <div className="shrink-0">
+                                                <span className="inline-flex items-center px-2.5 py-1 rounded-full text-sm font-semibold bg-blue-600 text-white">
+                                                    {p.score} Points
+                                                </span>
+                                            </div>
+                                        </li>
+                                    ))}
+                            </ul>
+                        </div>
+                    )}
+                </div>
             </div>
 
-            {players && <div className="overflow-y-auto">
-                <ul className="text-gray-800">
-                    {(Array.from(Object.entries(players as Record<string, GameStateOutgoingMessage["gameState"]["players"][string]>))?.sort((a, b) => b[1].score - a[1].score).map(([id, p], i) => (
-                        <li key={id} className="flex">
-                            <div className={`flex-grow border-r border-gray-200 pl-5 py-2 text-md  ${i > 0 ? "border-t": ""}`}>{p.name} <span title="Host">{p.isHost ? "👑" : ""}</span></div>
-                            <div className={`text-center w-30 border-blue-200 bg-blue-100 p-2 text-md  ${i > 0 ? "border-t": ""}`}>{p.score}</div>
-                        </li>
-                    )))}
-                </ul>
-            </div>}
+            <div className="px-4 py-4 h-full">
+                <div className="bg-white border-2 border-gray-300 rounded-xl shadow-sm overflow-hidden h-full">
+                    <div className="flex items-center justify-between px-4 py-3 bg-gray-50 border-b border-gray-200">
+                        <h2 className="text-lg font-bold text-gray-800">Chat</h2>
+                        <span className={`text-xs font-semibold px-2 py-1 rounded-full ${connectionStatus === "connected" ? "bg-green-100 text-green-800" : connectionStatus === "waiting" ? "bg-yellow-100 text-yellow-800" : "bg-gray-200 text-gray-700"}`}>
+                            {connectionStatus}
+                        </span>
+                    </div>
 
-            <div className="p-5 border-b border-t border-gray-200 bg-gray-50">
-                <h2 className="text-xl font-semibold text-gray-800">Chat</h2>
+                    <div className="h-full flex flex-col justify-between">
+                        <div className="flex-grow overflow-y-auto px-4 py-3">
+                            <ul className="space-y-3">
+                                {chat.map((c) => {
+                                    const isSystem = c.username === "System";
+                                    return (
+                                        <li key={c.id} className="flex items-start gap-3">
+                                            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${isSystem ? "bg-gray-200 text-gray-700" : "bg-blue-100 text-blue-700"}`}>
+                                                {initials(c.username)}
+                                            </div>
+                                            <div className="max-w-[80%]">
+                                                <div className="flex items-baseline gap-2">
+                                                    <span className="text-sm font-semibold text-gray-800">{c.username}</span>
+                                                    <span className="text-xs text-gray-500">{formatTime(c.timestamp)}</span>
+                                                </div>
+                                                <div className={`mt-1 px-3 py-2 rounded-lg break-words ${isSystem ? "bg-gray-100 text-gray-800" : "bg-blue-50 text-gray-900"}`}>
+                                                    {renderSegments(c.segments as ChatSegment[] | undefined, c.content)}
+                                                </div>
+                                            </div>
+                                        </li>
+                                    );
+                                })}
+                            </ul>
+                            <div ref={chatEndRef} />
+                        </div>
+
+                        <div>
+                            <form className="border-t border-gray-200 px-4 py-3 flex items-center gap-2" onSubmit={sendMessage}>
+                                <input
+                                    className="flex-grow px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    value={msg}
+                                    disabled={connectionStatus !== "connected"}
+                                    onChange={(e) => setMsg(e.target.value)}
+                                    placeholder="Type a message..."
+                                />
+                                <button
+                                    type="submit"
+                                    disabled={!msg.trim() || connectionStatus !== "connected"}
+                                    className="px-4 py-2 bg-blue-600 text-white font-semibold rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    Send
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
             </div>
-
-            <div className="flex-grow overflow-y-auto p-5">
-                <ul className="space-y-3">
-                    {chat.map((c) => (
-                        <React.Fragment key={c.id}>
-                            <div>{c.username}:</div>
-                            <li
-                                className="p-2 px-3 bg-blue-100 text-gray-800 rounded-lg max-w-[85%] break-words"
-                            >
-                                {renderSegments(c.segments as ChatSegment[] | undefined, c.content)}
-                            </li>
-                        </React.Fragment>
-                    ))}
-                </ul>
-                <div ref={chatEndRef} />
-            </div>
-
-            <form className="p-5 border-t border-gray-200 bg-gray-50 flex items-center" onSubmit={sendMessage}>
-                <input
-                    className="flex-grow p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    value={msg}
-                    disabled={connectionStatus !== "connected"}
-                    onChange={(e) => setMsg(e.target.value)}
-                    placeholder="Type a message..."
-                />
-                <button
-                    type="submit"
-                    disabled={!msg.trim() || connectionStatus !== "connected"}
-                    className="disabled:bg-gray-300 ml-3 py-2 px-4 bg-blue-600 text-white font-semibold rounded-md hover:bg-blue-700 transition-colors"
-                >
-                    Send
-                </button>
-            </form>
         </div>
     );
 }
