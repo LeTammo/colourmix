@@ -50,13 +50,22 @@ export class GameStateOutgoingMessage extends OutgoingMessage {
 
 // TODO: PlayerJoinedOutgoingMessage, PlayerLeftOutgoingMessage, etc.
 
+export type ChatSegment = { text: string; kind?: "correct" | "wrong" };
+
 export class ChatOutgoingMessage extends OutgoingMessage {
     username: string;
-    content: string;
-    constructor(username: string, content: string) {
+    // Either plain text content or structured segments
+    content?: string;
+    segments?: ChatSegment[];
+    constructor(username: string, content?: string, segments?: ChatSegment[]) {
         super("CHAT");
         this.username = username;
-        this.content = content;
+        if (content !== undefined) {
+            this.content = content;
+        }
+        if (segments !== undefined) {
+            this.segments = segments;
+        }
     }
 }
 

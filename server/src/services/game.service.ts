@@ -237,6 +237,21 @@ export class GameService extends EventEmitter {
             }, {} as { [playerId: string]: number }
             )));
 
+        // Send chat summary messages for each player with correct and wrong picks (structured segments)
+        const targetSet = new Set(currentRound.targetCards.map(c => c));
+        for (const player of this.gameState.players) {
+            const picked = currentRound.picks[player.id] || [];
+            const correct = picked.filter(card => targetSet.has(card)).length;
+            const wrong = picked.length - correct;
+            const segments = [
+                { text: `${player.name}: ` },
+                { text: `${correct} correct`, kind: "correct" as const },
+                { text: ", " },
+                { text: `${wrong} wrong`, kind: "wrong" as const },
+            ];
+            this.io.to(socket.gameId).emit("game_message", new ChatOutgoingMessage("System", undefined, segments));
+        }
+
         if (this.gameState.round >= this.gameState.maxRounds) {
             this.emit("game_over", this.gameState);
         }

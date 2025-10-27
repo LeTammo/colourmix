@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from "react";
-import { ChatOutgoingMessage, GameStateOutgoingMessage, OutgoingMessage } from "../../../shared/models/messages";
+import { ChatOutgoingMessage, GameStateOutgoingMessage, OutgoingMessage, type ChatSegment } from "../../../shared/models/messages";
 import { useSocket } from "../lib/socket";
 
 function Chat({players}: {players: GameStateOutgoingMessage["gameState"]["players"] | undefined}) {
@@ -41,6 +41,29 @@ function Chat({players}: {players: GameStateOutgoingMessage["gameState"]["player
         }
     };
 
+
+    const renderSegments = (segments?: ChatSegment[], fallback?: string) => {
+        if (!segments || segments.length === 0) {
+            return fallback ?? null;
+        }
+        return (
+            <>
+                {segments.map((seg, idx) => (
+                    <span
+                        key={idx}
+                        className={seg.kind === "correct"
+                            ? "text-green-600 font-semibold"
+                            : seg.kind === "wrong"
+                                ? "text-red-600 font-semibold"
+                                : undefined}
+                    >
+                        {seg.text}
+                    </span>
+                ))}
+            </>
+        );
+    };
+
     return (
         <div className="flex flex-col bg-white border-l border-gray-300 shadow-lg">
             <div className="p-5 border-b border-gray-200 bg-gray-50">
@@ -70,7 +93,7 @@ function Chat({players}: {players: GameStateOutgoingMessage["gameState"]["player
                             <li
                                 className="p-2 px-3 bg-blue-100 text-gray-800 rounded-lg max-w-[85%] break-words"
                             >
-                                {c.content}
+                                {renderSegments(c.segments as ChatSegment[] | undefined, c.content)}
                             </li>
                         </React.Fragment>
                     ))}
