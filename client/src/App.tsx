@@ -220,11 +220,14 @@ function App() {
             const gameStateMessage = message as GameStateOutgoingMessage;
             setGameState(gameStateMessage.gameState);
 
-            const roundState = gameStateMessage.gameState.rounds[gameStateMessage.gameState.round - 1]?.state;
+            const roundIndex = gameStateMessage.gameState.round - 1;
+            const currentRound = gameStateMessage.gameState.rounds[roundIndex];
+            const roundState = currentRound?.state;
             if (roundState === "playing") {
-                // Reset selection only if the round is in playing state and initial gamestate is received
-                setSelection(new Map());
-                socketRef.current.emit("game_message", { type: "CARDS_PICKED", cards: Array.from(selectionRef.current.keys()) });
+                const playerCards = currentRound?.picks?.[gameStateMessage.playerId] || [];
+                const restored = createColorMap(playerCards);
+                setSelection(restored);
+                socketRef.current.emit("game_message", { type: "CARDS_PICKED", cards: Array.from(restored.keys()) });
             }
             setPlayerId(gameStateMessage.playerId);
         } else if (message.type === "START_ROUND") {
