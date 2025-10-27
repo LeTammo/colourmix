@@ -1,12 +1,12 @@
 
 import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router';
-import HideIcon from './HideIcon';
-import ShowIcon from './ShowIcon';
 import RangeSlider from './RangeSlider';
 import type { CreateGamePayload } from '../../../shared/models/gamestate';
 import {randomTitle} from "../lib/gameTitle.ts";
 import Dice from "./Dice.tsx";
+import ShowHideIcon from './ShowHideIcon.tsx';
+import './CreateGame.css';
 
 const API_URL = import.meta.env.VITE_API_URL as string;
 
@@ -117,17 +117,24 @@ const CreateGame: React.FC = () => {
 						value={gameTitle}
 						onChange={e => setGameTitle(e.target.value)}
 						required
+						disabled={loading}
+						
 						className="mt-1 block w-full pl-3 pr-10 py-2 border border-gray-300 rounded-md
-						           focus:outline-none focus:ring focus:ring-blue-600"
+						           focus:outline-none focus:ring focus:ring-blue-600 disabled:opacity-50"
 					/>
 					<button
 						type="button"
 						aria-label="Generate random title"
-						onMouseDown={e => e.preventDefault()}
-						onClick={() => setGameTitle(randomTitle())}
-						className="absolute right-2 top-10 -mt-1 p-1 text-gray-600 hover:text-gray-800 active:scale-95 cursor-pointer"
+						// onMouseDown={e => e.preventDefault()}
+						disabled={loading}
+						onClick={() => {
+							if (loading) return;
+
+							setGameTitle(randomTitle())
+						}}
+						className="absolute right-2 top-8.25 p-1 text-gray-600 hover:text-gray-800 active:scale-95 disabled:opacity-50"
 					>
-						<Dice size={20} fill={'#155dfc'} />
+						<Dice size={24} fill={'oklch(54.6% 0.245 262.881)'} className='size-6 transition-transform duration-100' />
 					</button>
 				</label>
 
@@ -142,6 +149,7 @@ const CreateGame: React.FC = () => {
 						value={maxPlayers}
 						onChange={v => setMaxPlayers(Array.isArray(v) ? v[1] : v)}
 						ticks={10}
+						disabled={loading}
 					/>
 				</div>
 
@@ -156,6 +164,7 @@ const CreateGame: React.FC = () => {
 						value={timerDuration}
 						onChange={v => setTimerDuration(Array.isArray(v) ? v[1] : v)}
 						ticks={6}
+						disabled={loading}
 					/>
 				</div>
 
@@ -175,6 +184,7 @@ const CreateGame: React.FC = () => {
 							}
 						}}
 						ticks={[2,3,4]}
+						disabled={loading}	
 					/>
 				</div>
 
@@ -189,12 +199,14 @@ const CreateGame: React.FC = () => {
 						value={maxRounds}
 						onChange={v => setMaxRounds(Array.isArray(v) ? v[1] : v)}
 						ticks={10}
+						disabled={loading}
 					/>
 				</div>
 
 				<label className="flex items-center gap-2 mt-1">
 					<input
 						type="checkbox"
+						disabled={loading}
 						checked={withInviteCode}
 						onChange={e => setWithInviteCode(e.target.checked)}
 						className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-200"
@@ -207,29 +219,33 @@ const CreateGame: React.FC = () => {
 						{/* TODO: Show allowed letters for invite code*/}
 						<span className="text-sm font-medium text-gray-700">Invite Code</span>
 						<input
+							disabled={loading}
 							ref={inviteRef}
-							type={showInviteCode ? 'text' : 'password'}
+							type="text"
 							value={inviteCode}
                             minLength={6}
 							pattern={"[A-Za-z0-9\\-]+"}
                             required={withInviteCode}
                             autoComplete="off"
 							onChange={e => setInviteCode(e.target.value)}
-							className="mt-1 block w-full px-3 py-2 pr-20 border border-gray-300 rounded-md
-							           focus:outline-none focus:ring focus:ring-blue-200"
+							className={` ${!showInviteCode ? 'secured-text' : ''} mt-1 block w-full px-3 py-2 pr-10 border border-gray-300 rounded-md
+							           focus:outline-none focus:ring focus:ring-blue-200 disabled:opacity-50`}
 						/>
 						<button
 							type="button"
+							disabled={loading}
 							// prevent the button from taking focus so the input keeps its selection/caret
-							onMouseDown={e => e.preventDefault()}
+							// onMouseDown={e => {e.preventDefault()}}
 							onClick={() => {
+								if (loading) return;
+
 								// toggle visibility without affecting focus/selection
 								setShowInviteCode(prev => !prev);
 							}}
 							aria-label={showInviteCode ? 'Hide invite code' : 'Show invite code'}
-							className="absolute right-2 top-9 -mt-1 px-2 py-1 text-sm text-blue-600 hover:text-blue-800"
+							className="absolute right-2 top-8.25 p-1 text-sm text-blue-600 active:scale-95 cursor-pointer disabled:opacity-50"
 						>
-							{showInviteCode ? <HideIcon /> : <ShowIcon />}
+							{<ShowHideIcon show={showInviteCode} />}
 						</button>
 						<div className="text-xs text-gray-500 mt-1">At least 6 characters</div>
 					</label>

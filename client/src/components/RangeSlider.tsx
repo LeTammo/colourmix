@@ -12,6 +12,7 @@ export interface RangeSliderProps {
   ticks?: number | number[];
   showLabels?: boolean;
   className?: string;
+  disabled?: boolean;
 }
 
 const clamp = (v: number, a: number, b: number) => Math.min(Math.max(v, a), b);
@@ -31,6 +32,7 @@ const RangeSlider: React.FC<RangeSliderProps> = ({
   onChange,
   ticks,
   showLabels = true,
+  disabled = false,
   className = '',
 }) => {
   const trackRef = useRef<HTMLDivElement | null>(null);
@@ -263,7 +265,7 @@ const RangeSlider: React.FC<RangeSliderProps> = ({
   const highPct = valueToPercent(high as number);
 
   return (
-    <div className={`w-full mb-4 ${className}`}>
+    <div className={`w-full mb-4 ${className} ${disabled ? 'opacity-50 pointer-events-none' : ''}`}>
       <div className="relative h-15">
         {/* Track */}
         <div

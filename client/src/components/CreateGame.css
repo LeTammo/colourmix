@@ -1,0 +1,5 @@
+/* SecuredText.css */
+.secured-text {
+  /* Use the standard, hyphenated CSS property name in the CSS file */
+  -webkit-text-security: disc;
+}
