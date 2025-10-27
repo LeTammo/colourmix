@@ -110,16 +110,16 @@ function Chat({players}: {players: GameStateOutgoingMessage["gameState"]["player
                 </div>
             </div>
 
-            <div className="px-4 py-4 h-full">
-                <div className="bg-white border-2 border-gray-300 rounded-xl shadow-sm overflow-hidden h-full">
-                    <div className="flex items-center justify-between px-4 py-3 bg-gray-50 border-b border-gray-200">
+            <div className="px-4 py-4 flex-1 min-h-0">
+                <div className="bg-white border-2 border-gray-300 rounded-xl shadow-sm overflow-hidden h-full flex flex-col min-h-0">
+                    <div className="flex items-center justify-between px-4 py-3 bg-gray-50 border-b border-gray-200 sticky top-0 z-10">
                         <h2 className="text-lg font-bold text-gray-800">Chat</h2>
                         <span className={`text-xs font-semibold px-2 py-1 rounded-full ${connectionStatus === "connected" ? "bg-green-100 text-green-800" : connectionStatus === "waiting" ? "bg-yellow-100 text-yellow-800" : "bg-gray-200 text-gray-700"}`}>
                             {connectionStatus}
                         </span>
                     </div>
 
-                    <div className="h-full flex flex-col justify-between">
+                    <div className="flex flex-col justify-between h-full min-h-0">
                         <div className="flex-grow overflow-y-auto px-4 py-3">
                             <ul className="space-y-3">
                                 {chat.map((c) => {
