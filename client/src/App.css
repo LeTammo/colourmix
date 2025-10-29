@@ -1,0 +1,24 @@
+.blend-logo {
+
+    color: #ffffff;
+    text-shadow:
+        1px 0px #000000,
+        0px 1px #000000,
+        -1px 0px #000000,
+        0px -1px #000000,
+        1px -1px 0px #66ffff,
+        2px -2px 0px #66ffff,
+        3px -3px 0px #66ffff,
+        4px -4px 0px #66ffff,
+        5px -5px 0px #66ffff,
+        6px -6px 0px #ff66ff,
+        7px -7px 0px #ff66ff,
+        8px -8px 0px #ff66ff,
+        9px -9px 0px #ff66ff,
+        10px -10px 0px #ff66ff,
+        11px -11px 0px #ffff66,
+        12px -12px 0px #ffff66,
+        13px -13px 0px #ffff66,
+        14px -14px 0px #ffff66,
+        15px -15px 0px #ffff66;
+}

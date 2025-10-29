@@ -49,7 +49,7 @@ const CardComponent: React.FC<CardComponentProps> = ({ cardState, state, timer, 
             if (state === "playing" && timer > 0) handleColorSelect([cardState.name, cardState.arr]);
         }}
         className={`color-card w-30 h-40 rounded-xl flex items-end justify-end
-                    cursor-pointer border-2 hover:scale-105 transition-transform relative`}
+                    cursor-pointer border hover:scale-105 transition-transform relative`}
         style={style}
         data-color={cardState.name}
     >

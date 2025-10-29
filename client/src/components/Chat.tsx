@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect, useCallback } from "react";
 import { ChatOutgoingMessage, GameStateOutgoingMessage, OutgoingMessage, type ChatSegment } from "../../../shared/models/messages";
 import { useSocket } from "../lib/socket";
 
-function Chat({players}: {players: GameStateOutgoingMessage["gameState"]["players"] | undefined}) {
+function Chat({players, playerId}: {players: GameStateOutgoingMessage["gameState"]["players"] | undefined, playerId: string | null}) {
     const chatEndRef = useRef<HTMLDivElement | null>(null);
     const { socket, connectionStatus } = useSocket();
     const [chat, setChat] = useState<ChatOutgoingMessage[]>([]);
@@ -93,7 +93,7 @@ function Chat({players}: {players: GameStateOutgoingMessage["gameState"]["player
                                                     {initials(p.name)}
                                                 </div>
                                                 <div className="truncate text-gray-800">
-                                                    <span className="font-medium">{p.name}</span>
+                                                    <span className={`${id === playerId ? "font-bold" : "font-medium"}`}>{p.name}</span>
                                                     {p.isHost && <span title="Host" className="ml-1" aria-label="Host">👑</span>}
                                                 </div>
                                             </div>

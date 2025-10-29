@@ -12,7 +12,9 @@ import CardComponent from "./components/CardComponent.tsx";
 import type { Card, CMYKColor } from "../../shared/models/color.ts";
 import { calculateHex, colors } from "../../shared/lib/color.ts";
 import { useNavigate, useParams } from "react-router"
+import "./App.css"
 
+const TITLE = import.meta.env.VITE_APP_TITLE || "blend!";
 
 function App() {
     const [targetColor, setTargetColor] = useState<Map<Card, CMYKColor>>(new Map());
@@ -414,15 +416,22 @@ function App() {
                 {connectionStatus === "error" && (<div className="text-center text-gray-600">Error connecting to server. Please try again later.</div>)}
                 {connectionStatus === "disconnected" && (<div className="text-center text-gray-600">Disconnected from server. Please reload the page.</div>)}
                 {connectionStatus === "connected" && gameState && (<div className="game-container">
-                    <header className="game-header text-3xl text-center font-extrabold">
-                        <h1>{gameState.gameTitle || "Untitled Game"}</h1>
+                    <header className="game-header relative flex items-center flex-col text-center font-extrabold">
+                        <span className="text-9xl blend-logo mb-15">{TITLE}</span>
+
+                        <div className="absolute mt-40 border-2 p-4 border-gray-300 rounded-2xl
+                                        shadow-sm bg-white">
+                        <span className="text-sm text-gray-500">Game title:</span>
+                        <div className="text-2xl">{gameState.gameTitle || "Untitled Game"}</div>
+                        </div>
+
                     </header>
                     <section className="goal-section flex justify-around my-4 border-2 p-8 border-gray-300 rounded-2xl
                                         shadow-sm bg-white items-center">
                         <div className="color-display">
-                            <h2 className="text-2xl font-semibold text-center pb-3">Target Color</h2>
+                            <h2 className="text-2xl font-bold text-center pb-3">Target Color</h2>
                             <div className="color-swatch target-color">
-                                <div className="color-card w-45 h-60 border-3 rounded-xl transition-colors duration-1000 ease-in-out flex items-end justify-end"
+                                <div className="color-card w-45 h-60 border-2 rounded-xl transition-colors duration-1000 ease-in-out flex items-end justify-end"
                                     style={{
                                         borderColor: `color-mix(in srgb, ${targetColorHex} 100%, black 50%)`,
                                         backgroundColor: targetColorHex
@@ -451,9 +460,9 @@ function App() {
                             </div>
                         </div>
                         <div className="color-display flex flex-col items-center">
-                            <h2 className="text-2xl font-semibold text-center pb-3">Your Color</h2>
+                            <h2 className="text-2xl font-bold text-center pb-3">Your Color</h2>
                             <div className="color-swatch current-mix">
-                                <div className="color-card w-45 h-60 border-3 rounded-xl transition-colors duration-1000 ease-in-out"
+                                <div className="color-card w-45 h-60 border-2 rounded-xl transition-colors duration-1000 ease-in-out"
                                     style={{
                                         borderColor: `color-mix(in srgb, ${mixedColorHex} 100%, black 50%)`,
                                         backgroundColor: mixedColorHex
@@ -462,8 +471,13 @@ function App() {
                             </div>
                         </div>
                     </section>
-
-                    <main className="palette-section grid grid-cols-6 gap-4 mt-8 border-2 p-4 border-gray-300 rounded-2xl
+                    <div className="instructions-section text-center text-gray-700 font-medium">
+                        {state === "waiting" && "Waiting for host to start the round..."}
+                        {state === "playing" && timer > 0 && "Select colors to mix that match the target color!"}
+                        {state === "finished" && (gameState.round >= gameState.maxRounds) && "Game over! Thanks for playing!"}
+                        {state === "finished" && (gameState.round < gameState.maxRounds) && "Round over! Host can start the next round."}
+                    </div>
+                    <main className="palette-section grid grid-cols-6 gap-4 mt-4 border-2 p-4 border-gray-300 rounded-2xl
                                      shadow-sm bg-white">
                         {cardStates.map((cardState) => {
                             return (
@@ -477,7 +491,7 @@ function App() {
                     </footer>
                 </div>)}
             </div>
-            <Chat players={gameState?.players} />
+            <Chat players={gameState?.players} playerId={playerId}/>
         </div>
     );
 

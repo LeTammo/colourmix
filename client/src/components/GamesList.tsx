@@ -70,7 +70,7 @@ const GamesList: React.FC = () => {
                     const id = String(g.gameId ?? idx);
                     const expanded = !!expandedGames[id];
                     return (
-                        <div key={id} className="border-2 rounded-2xl shadow-lg border-gray-400 flex flex-col p-4 bg-white">
+                        <div key={id} className="border-2 rounded-2xl shadow-lg border-gray-300 flex flex-col p-4 bg-white">
                             <div className="flex items-center justify-between mb-2">
                                 <div className="text-lg font-semibold">
                                     <Link to={`/games/${id}`}>{g.gameTitle || "Untitled Game"}</Link>
