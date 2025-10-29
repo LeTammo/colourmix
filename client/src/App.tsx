@@ -417,8 +417,8 @@ function App() {
                     <header className="game-header text-3xl text-center font-extrabold">
                         <h1>{gameState.gameTitle || "Untitled Game"}</h1>
                     </header>
-                    <section className="goal-section flex justify-around my-4 border-2 p-8 border-gray-400 rounded-2xl
-                                        shadow-lg bg-white items-center">
+                    <section className="goal-section flex justify-around my-4 border-2 p-8 border-gray-300 rounded-2xl
+                                        shadow-sm bg-white items-center">
                         <div className="color-display">
                             <h2 className="text-2xl font-semibold text-center pb-3">Target Color</h2>
                             <div className="color-swatch target-color">
@@ -463,8 +463,8 @@ function App() {
                         </div>
                     </section>
 
-                    <main className="palette-section grid grid-cols-6 gap-4 mt-8 border-2 p-4 border-gray-400 rounded-2xl
-                                     shadow-lg bg-white">
+                    <main className="palette-section grid grid-cols-6 gap-4 mt-8 border-2 p-4 border-gray-300 rounded-2xl
+                                     shadow-sm bg-white">
                         {cardStates.map((cardState) => {
                             return (
                                 <CardComponent key={cardState.name} cardState={cardState} state={state} timer={timer} handleColorSelect={handleColorSelect} />

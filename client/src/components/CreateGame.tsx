@@ -106,7 +106,7 @@ const CreateGame: React.FC = () => {
 		<div className="font-nunito flex items-center justify-center min-h-screen bg-gray-100">
 			<form
 				onSubmit={handleSubmit}
-				className="bg-white p-8 border-2 rounded-2xl shadow-lg border-gray-400 w-full max-w-md flex flex-col gap-4"
+				className="bg-white p-8 border-2 rounded-2xl shadow-sm border-gray-300 w-full max-w-md flex flex-col gap-4"
 			>
 				<h2 className="text-2xl font-bold text-center mb-2">Create Game</h2>
 
@@ -132,7 +132,7 @@ const CreateGame: React.FC = () => {
 
 							setGameTitle(randomTitle())
 						}}
-						className="absolute right-2 top-8.25 p-1 text-gray-600 hover:text-gray-800 active:scale-95 disabled:opacity-50"
+						className="absolute right-2 top-8.25 p-1 text-gray-600 hover:text-gray-800 active:scale-95 disabled:opacity-50 cursor-pointer"
 					>
 						<Dice size={24} fill={'oklch(54.6% 0.245 262.881)'} className='size-6 transition-transform duration-100' />
 					</button>
