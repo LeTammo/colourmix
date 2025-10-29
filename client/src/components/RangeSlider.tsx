@@ -11,6 +11,8 @@ export interface RangeSliderProps {
   // number of ticks (will use min..max evenly) or explicit tick values
   ticks?: number | number[];
   showLabels?: boolean;
+  // how many ticks should display numeric labels (first and last always included if possible)
+  labelCount?: number;
   className?: string;
   disabled?: boolean;
 }
@@ -32,6 +34,7 @@ const RangeSlider: React.FC<RangeSliderProps> = ({
   onChange,
   ticks,
   showLabels = true,
+  labelCount = 10,
   disabled = false,
   className = '',
 }) => {
@@ -46,16 +49,37 @@ const RangeSlider: React.FC<RangeSliderProps> = ({
   const valueToPercent = (v: number) => ((v - min) / (max - min)) * 100;
   const percentToValue = (percent: number) => roundToStep(min + (percent / 100) * (max - min), step, min);
 
-  // Create tick values
+  // Create tick values: render a tick for every `step` between min and max.
+  // If the `ticks` prop is provided as an array we'll use that as explicit tick positions.
   let tickValues: number[] = [];
   if (Array.isArray(ticks)) {
     tickValues = ticks;
   } else {
-    const tickCount = typeof ticks === 'number' && ticks > 1 ? ticks : Math.floor((max - min) / step) + 1;
-    const stepTick = (max - min) / Math.max(1, tickCount - 1);
-    tickValues = Array.from({ length: tickCount }, (_, i) => Math.round((min + i * stepTick) / step) * step);
-    // ensure within bounds
-    tickValues = tickValues.map(v => clamp(v, min, max));
+    // Build an array stepping by `step` so every step has a visual tick.
+    for (let v = min; v <= max + 1e-9; v += step) {
+      // guard floating point imprecision
+      const rounded = Math.round(v / step) * step;
+      tickValues.push(clamp(rounded, min, max));
+    }
+    // ensure unique and sorted
+    tickValues = Array.from(new Set(tickValues)).sort((a, b) => a - b);
+  }
+
+  // Decide which ticks get numeric labels. We label up to `labelCount` ticks (default 3).
+  const effectiveLabelCount = Math.max(0, Math.floor(labelCount));
+  const labeledIndices = new Set<number>();
+  if (showLabels && effectiveLabelCount > 0) {
+    const n = tickValues.length;
+    const k = Math.min(effectiveLabelCount, n);
+    if (k >= n) {
+      for (let i = 0; i < n; i++) labeledIndices.add(i);
+    } else {
+      // choose k indices evenly spaced across 0..n-1 (include first and last)
+      for (let j = 0; j < k; j++) {
+        const idx = Math.round((j * (n - 1)) / (k - 1));
+        labeledIndices.add(idx);
+      }
+    }
   }
 
   useEffect(() => {
@@ -282,11 +306,17 @@ const RangeSlider: React.FC<RangeSliderProps> = ({
           />
 
           {/* ticks */}
-          <div className="absolute top-12 inset-0 flex items-start justify-between pointer-events-none">
+          <div className="absolute top-12 left-0 right-0 pointer-events-none">
             {tickValues.map((t, i) => (
-              <div key={i} className="flex flex-col items-center -mt-2 w-0">
+              <div
+                key={i}
+                className="absolute flex flex-col items-center -mt-2"
+                style={{ left: `${valueToPercent(t)}%`, transform: 'translateX(-50%)' }}
+              >
                 <div className="w-px h-2 bg-gray-400" />
-                {showLabels && <div className="text-xs text-gray-500 mt-1">{t}</div>}
+                {showLabels && labeledIndices.has(i) && (
+                  <div className="text-xs text-gray-500 mt-1">{t}</div>
+                )}
               </div>
             ))}
           </div>

@@ -3,7 +3,7 @@ import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router';
 import RangeSlider from './RangeSlider';
 import type { CreateGamePayload } from '../../../shared/models/gamestate';
-import {randomTitle} from "../lib/gameTitle.ts";
+import { randomTitle } from "../lib/gameTitle.ts";
 import Dice from "./Dice.tsx";
 import ShowHideIcon from './ShowHideIcon.tsx';
 import './CreateGame.css';
@@ -58,7 +58,7 @@ const CreateGame: React.FC = () => {
 			minCards,
 			maxCards,
 			maxRounds,
-		// include inviteCode only when the checkbox is set
+			// include inviteCode only when the checkbox is set
 			...(withInviteCode ? { inviteCode } : { inviteCode: undefined }),
 		};
 
@@ -66,7 +66,7 @@ const CreateGame: React.FC = () => {
 			setLoading(true);
 			const res = await fetch(`${API_URL}/game`, {
 				method: 'POST',
-				headers: { 
+				headers: {
 					'Content-Type': 'application/json',
 					'Authorization': `Bearer ${localStorage.getItem('token') || ''}`
 				},
@@ -87,7 +87,7 @@ const CreateGame: React.FC = () => {
 					// Unauthorized - token might be invalid
 					localStorage.removeItem('token');
 					navigate('/login');
-					return;	
+					return;
 				}
 
 				const data = await res.json().catch(() => ({}));
@@ -118,7 +118,7 @@ const CreateGame: React.FC = () => {
 						onChange={e => setGameTitle(e.target.value)}
 						required
 						disabled={loading}
-						
+
 						className="mt-1 block w-full pl-3 pr-10 py-2 border border-gray-300 rounded-md
 						           focus:outline-none focus:ring focus:ring-blue-600 disabled:opacity-50"
 					/>
@@ -140,8 +140,8 @@ const CreateGame: React.FC = () => {
 
 				<div>
 					<label className="block -mb-3 text-sm font-medium text-gray-700">
-                        Players: <span className="font-semibold">{maxPlayers}</span>
-                    </label>
+						Players: <span className="font-semibold">{maxPlayers}</span>
+					</label>
 					<RangeSlider
 						min={1}
 						max={10}
@@ -149,14 +149,15 @@ const CreateGame: React.FC = () => {
 						value={maxPlayers}
 						onChange={v => setMaxPlayers(Array.isArray(v) ? v[1] : v)}
 						ticks={10}
+						labelCount={10}
 						disabled={loading}
 					/>
 				</div>
 
 				<div>
 					<label className="block -mb-3 text-sm font-medium text-gray-700">
-                        Timer (seconds): <span className="font-semibold">{timerDuration}</span>
-                    </label>
+						Timer (seconds): <span className="font-semibold">{timerDuration}</span>
+					</label>
 					<RangeSlider
 						min={10}
 						max={60}
@@ -164,14 +165,15 @@ const CreateGame: React.FC = () => {
 						value={timerDuration}
 						onChange={v => setTimerDuration(Array.isArray(v) ? v[1] : v)}
 						ticks={6}
+						labelCount={6}
 						disabled={loading}
 					/>
 				</div>
 
 				<div className="">
 					<label className="block -mb-3 text-sm font-medium text-gray-700">
-                        Cards: <span className="font-semibold">{minCards} to {maxCards}</span>
-                    </label>
+						Cards: <span className="font-semibold">{minCards} to {maxCards}</span>
+					</label>
 					<RangeSlider
 						min={2}
 						max={4}
@@ -183,15 +185,16 @@ const CreateGame: React.FC = () => {
 								setMaxCards(v[1]);
 							}
 						}}
-						ticks={[2,3,4]}
-						disabled={loading}	
+						labelCount={3}
+						ticks={[2, 3, 4]}
+						disabled={loading}
 					/>
 				</div>
 
 				<div>
 					<label className="block -mb-3 text-sm font-medium text-gray-700">
-                        Rounds: <span className="font-semibold">{maxRounds}</span>
-                    </label>
+						Rounds: <span className="font-semibold">{maxRounds}</span>
+					</label>
 					<RangeSlider
 						min={1}
 						max={10}
@@ -199,6 +202,7 @@ const CreateGame: React.FC = () => {
 						value={maxRounds}
 						onChange={v => setMaxRounds(Array.isArray(v) ? v[1] : v)}
 						ticks={10}
+						labelCount={10}
 						disabled={loading}
 					/>
 				</div>
@@ -214,42 +218,43 @@ const CreateGame: React.FC = () => {
 					<span className="text-sm text-gray-700">Require invite code</span>
 				</label>
 
-				{withInviteCode && (
-					<label className="block relative">
-						{/* TODO: Show allowed letters for invite code*/}
-						<span className="text-sm font-medium text-gray-700">Invite Code</span>
-						<input
-							disabled={loading}
-							ref={inviteRef}
-							type="text"
-							value={inviteCode}
-                            minLength={6}
-							pattern={"[A-Za-z0-9\\-]+"}
-                            required={withInviteCode}
-                            autoComplete="off"
-							onChange={e => setInviteCode(e.target.value)}
-							className={` ${!showInviteCode ? 'secured-text' : ''} mt-1 block w-full px-3 py-2 pr-10 border border-gray-300 rounded-md
-							           focus:outline-none focus:ring focus:ring-blue-200 disabled:opacity-50`}
-						/>
-						<button
-							type="button"
-							disabled={loading}
-							// prevent the button from taking focus so the input keeps its selection/caret
-							// onMouseDown={e => {e.preventDefault()}}
-							onClick={() => {
-								if (loading) return;
 
-								// toggle visibility without affecting focus/selection
-								setShowInviteCode(prev => !prev);
-							}}
-							aria-label={showInviteCode ? 'Hide invite code' : 'Show invite code'}
-							className="absolute right-2 top-8.25 p-1 text-sm text-blue-600 active:scale-95 cursor-pointer disabled:opacity-50"
-						>
-							{<ShowHideIcon show={showInviteCode} />}
-						</button>
-						<div className="text-xs text-gray-500 mt-1">At least 6 characters</div>
-					</label>
-				)}
+				<label className="block relative">
+					{/* TODO: Show allowed letters for invite code*/}
+					<span className="text-sm font-medium text-gray-700">Invite Code</span>
+					<input
+						disabled={loading || !withInviteCode}
+						ref={inviteRef}
+						type="text"
+						value={inviteCode}
+						minLength={6}
+						pattern={"[A-Za-z0-9\\-]+"}
+						required={withInviteCode}
+
+						autoComplete="off"
+						onChange={e => setInviteCode(e.target.value)}
+						className={` ${!showInviteCode ? 'secured-text' : ''} mt-1 block w-full px-3 py-2 pr-10 border border-gray-300 rounded-md
+							           focus:outline-none focus:ring focus:ring-blue-200 disabled:opacity-50`}
+					/>
+					<button
+						type="button"
+						disabled={loading || !withInviteCode}
+						// prevent the button from taking focus so the input keeps its selection/caret
+						// onMouseDown={e => {e.preventDefault()}}
+						onClick={() => {
+							if (loading || !withInviteCode) return;
+
+							// toggle visibility without affecting focus/selection
+							setShowInviteCode(prev => !prev);
+						}}
+						aria-label={showInviteCode ? 'Hide invite code' : 'Show invite code'}
+						className="absolute right-2 top-8.25 p-1 text-sm text-blue-600 active:scale-95 cursor-pointer disabled:opacity-50"
+					>
+						{<ShowHideIcon show={showInviteCode} />}
+					</button>
+					<div className="text-xs text-gray-500 mt-1">At least 6 characters</div>
+				</label>
+
 
 				{error && (
 					<div className="text-red-500 text-sm text-center">{error}</div>
