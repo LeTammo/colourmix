@@ -3,7 +3,7 @@ import type { GameStateOutgoing } from '../../../shared/models/gamestate';
 import type { Card } from '../../../shared/models/color';
 import { calculateHex, colors } from '../../../shared/lib/color';
 import { Link, useNavigate } from 'react-router';
-import { initials } from '../lib/ui';
+import { initials, randomAvatarColor } from '../lib/ui';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -103,7 +103,7 @@ const GamesList: React.FC = () => {
                                             {Object.entries(g.players).map(([pid, p]) => (
                                                 <div key={pid} className="flex rounded-full items-center justify-between px-3 py-2 bg-gray-100">
                                                     <div className="flex items-center gap-3">
-                                                        <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-sm font-bold">
+                                                        <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${randomAvatarColor(pid)}`}>
                                                             {initials(p.name)}
                                                         </div>
                                                         <div>

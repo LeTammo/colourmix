@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import { ChatOutgoingMessage, GameStateOutgoingMessage, OutgoingMessage, type ChatSegment } from "../../../shared/models/messages";
 import { useSocket } from "../lib/socket";
-import { formatTime, initials } from "../lib/ui";
+import { formatTime, initials, randomAvatarColor } from "../lib/ui";
 
 function Chat({players, playerId}: {players: GameStateOutgoingMessage["gameState"]["players"] | undefined, playerId: string | null}) {
     const chatEndRef = useRef<HTMLDivElement | null>(null);
@@ -76,7 +76,7 @@ function Chat({players, playerId}: {players: GameStateOutgoingMessage["gameState
                                     .map(([id, p]) => (
                                         <li key={id} className="flex items-center gap-3 px-4 py-2">
                                             <div className="flex items-center gap-3 flex-1 min-w-0">
-                                                <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-sm font-bold">
+                                                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${randomAvatarColor(id)}`}>
                                                     {initials(p.name)}
                                                 </div>
                                                 <div className="truncate text-gray-800">
@@ -113,7 +113,7 @@ function Chat({players, playerId}: {players: GameStateOutgoingMessage["gameState
                                     const isSystem = c.username === "System";
                                     return (
                                         <li key={c.id} className="flex items-start gap-3">
-                                            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${isSystem ? "bg-gray-200 text-gray-700" : "bg-blue-100 text-blue-700"}`}>
+                                            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${isSystem ? "bg-gray-200 text-gray-700" : randomAvatarColor(c.playerId ?? "")}`}>
                                                 {initials(c.username)}
                                             </div>
                                             <div className="max-w-[80%]">
@@ -121,7 +121,7 @@ function Chat({players, playerId}: {players: GameStateOutgoingMessage["gameState
                                                     <span className="text-sm font-semibold text-gray-800">{c.username}</span>
                                                     <span className="text-xs text-gray-500">{formatTime(c.timestamp)}</span>
                                                 </div>
-                                                <div className={`mt-1 px-3 py-2 rounded-lg break-words ${isSystem ? "bg-gray-100 text-gray-800" : "bg-blue-50 text-gray-900"}`}>
+                                                <div className={`mt-1 px-3 py-2 rounded-lg break-words ${(isSystem || c.playerId !== playerId) ? "bg-gray-100 text-gray-800" : "bg-blue-100 text-gray-800"}`}>
                                                     {renderSegments(c.segments as ChatSegment[] | undefined, c.content)}
                                                 </div>
                                             </div>

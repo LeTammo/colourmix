@@ -67,6 +67,7 @@ export class GameService extends EventEmitter {
 
         const outMessage = new ChatOutgoingMessage(
             this.getPlayerById(socket.user?.id)?.name || "Unknown",
+            socket.user?.id,
             message.content,
         );
 
@@ -249,7 +250,7 @@ export class GameService extends EventEmitter {
                 { text: ", " },
                 { text: `${wrong} wrong`, kind: "wrong" as const },
             ];
-            this.io.to(socket.gameId).emit("game_message", new ChatOutgoingMessage("System", undefined, segments));
+            this.io.to(socket.gameId).emit("game_message", new ChatOutgoingMessage("System", undefined, undefined, segments));
         }
 
         if (this.gameState.round >= this.gameState.maxRounds) {

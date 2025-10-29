@@ -54,12 +54,17 @@ export type ChatSegment = { text: string; kind?: "correct" | "wrong" };
 
 export class ChatOutgoingMessage extends OutgoingMessage {
     username: string;
+    playerId?: string;
     // Either plain text content or structured segments
     content?: string;
     segments?: ChatSegment[];
-    constructor(username: string, content?: string, segments?: ChatSegment[]) {
+    constructor(username: string, playerId?: string, content?: string, segments?: ChatSegment[]) {
         super("CHAT");
         this.username = username;
+
+        if (playerId !== undefined) {
+            this.playerId = playerId;
+        }
         if (content !== undefined) {
             this.content = content;
         }
