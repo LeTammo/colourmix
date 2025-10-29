@@ -84,11 +84,18 @@ const GamesList: React.FC = () => {
 
                             </div>
 
-
+                            <button
+                                type="button"
+                                aria-expanded={expanded}
+                                onClick={() => setExpandedGames(prev => ({ ...prev, [id]: !prev[id] }))}
+                                className="px-2 py-1 text-sm bg-gray-100 rounded hover:bg-gray-200 flex-grow"
+                            >
+                                {expanded ? 'Hide Details' : 'Show Details'}
+                            </button>
 
                             {expanded ? (
                                 <>
-                                    <div className="mb-3">
+                                    <div className="mt-3 mb-3">
                                         <div className="text-sm text-gray-600">Round Duration: <span className="font-medium">{g.timerDuration} seconds</span></div>
                                         <div className="text-sm text-gray-600">Max Players: <span className="font-medium">{g.maxPlayers}</span></div>
                                         <div className="text-sm text-gray-600">Min Cards: <span className="font-medium">{g.minCards}</span></div>
@@ -149,14 +156,7 @@ const GamesList: React.FC = () => {
                                 </>
                             ) : null}
 
-                            <button
-                                type="button"
-                                aria-expanded={expanded}
-                                onClick={() => setExpandedGames(prev => ({ ...prev, [id]: !prev[id] }))}
-                                className="px-2 py-1 text-sm bg-gray-100 rounded hover:bg-gray-200 flex-grow"
-                            >
-                                {expanded ? 'Hide Details' : 'Show Details'}
-                            </button>
+
                         </div>
                     );
                 })}
