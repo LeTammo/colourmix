@@ -1,5 +1,5 @@
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router';
 import RangeSlider from './RangeSlider';
 import type { CreateGamePayload } from '../../../shared/models/gamestate';
@@ -25,6 +25,31 @@ const CreateGame: React.FC = () => {
 	const navigate = useNavigate();
 
 	const inviteRef = useRef<HTMLInputElement | null>(null);
+
+	// Prefill state from previously saved defaults (if available)
+	useEffect(() => {
+		try {
+			const raw = localStorage.getItem('createGameDefaults');
+			if (!raw) return;
+			const parsed = JSON.parse(raw) as Record<string, unknown>;
+			if (typeof parsed.maxPlayers === 'number') setMaxPlayers(parsed.maxPlayers);
+			if (typeof parsed.timerDuration === 'number') setTimerDuration(parsed.timerDuration);
+			if (typeof parsed.minCards === 'number') setMinCards(parsed.minCards);
+			if (typeof parsed.maxCards === 'number') setMaxCards(parsed.maxCards);
+			if (typeof parsed.maxRounds === 'number') setMaxRounds(parsed.maxRounds);
+
+			// Determine if an invite code was previously intended to be used. We
+			// check for the presence of the property rather than truthiness so an
+			// empty string is preserved.
+			if (Object.prototype.hasOwnProperty.call(parsed, 'inviteCode')) {
+				setWithInviteCode(true);
+				setInviteCode(typeof parsed.inviteCode === 'string' ? parsed.inviteCode : '');
+			}
+		} catch (err) {
+			// Don't block the UI if parsing fails or localStorage is unavailable.
+			console.warn('Unable to read createGameDefaults from localStorage', err);
+		}
+	}, []);
 
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
@@ -61,6 +86,24 @@ const CreateGame: React.FC = () => {
 			// include inviteCode only when the checkbox is set
 			...(withInviteCode ? { inviteCode } : { inviteCode: undefined }),
 		};
+
+		// Persist the chosen defaults locally so the next time the user opens
+		// the Create Game form we can prefill these values.
+		try {
+			const createGameDefaults = {
+				maxPlayers,
+				timerDuration,
+				minCards,
+				maxCards,
+				maxRounds,
+				// only include inviteCode when the checkbox is set
+				...(withInviteCode ? { inviteCode } : {}),
+			};
+			localStorage.setItem('createGameDefaults', JSON.stringify(createGameDefaults));
+		} catch (err) {
+			// If localStorage is unavailable for some reason, don't block game creation.
+			console.warn('Unable to persist create game defaults', err);
+		}
 
 		try {
 			setLoading(true);
