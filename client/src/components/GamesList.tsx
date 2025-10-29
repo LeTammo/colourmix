@@ -3,6 +3,7 @@ import type { GameStateOutgoing } from '../../../shared/models/gamestate';
 import type { Card } from '../../../shared/models/color';
 import { calculateHex, colors } from '../../../shared/lib/color';
 import { Link, useNavigate } from 'react-router';
+import { initials } from '../lib/ui';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -66,7 +67,7 @@ const GamesList: React.FC = () => {
     return (
         <div className="flex font-nunito h-screen w-full bg-gray-100 justify-center items-start">
             <div className="p-4 grid gap-4 w-full max-w-3xl mt-8">
-                {games.map((g, idx) => {
+                {games.sort((a, b) => b.createdAt - a.createdAt).map((g, idx) => {
                     const id = String(g.gameId ?? idx);
                     const expanded = !!expandedGames[id];
                     return (
@@ -74,7 +75,7 @@ const GamesList: React.FC = () => {
                             <div className="flex items-center justify-between mb-2">
                                 <div className="text-lg font-semibold">
                                     <Link to={`/games/${id}`}>{g.gameTitle || "Untitled Game"}</Link>
-                                    <div className="text-xs text-gray-500">[{g.gameId}]</div>
+                                    <div className="text-xs font-normal text-gray-500">Created at {new Date(g.createdAt).toLocaleString()}</div>
                                 </div>
                                 <div className="flex items-center gap-3">
                                     <div className="text-sm text-gray-500">Round {g.round} / {g.maxRounds}</div>
@@ -100,15 +101,21 @@ const GamesList: React.FC = () => {
                                         <div className="text-sm font-semibold mb-2">Players:</div>
                                         <div className="flex flex-col gap-2">
                                             {Object.entries(g.players).map(([pid, p]) => (
-                                                <div key={pid} className="flex items-center justify-between px-3 py-2 bg-gray-100 rounded-lg">
+                                                <div key={pid} className="flex rounded-full items-center justify-between px-3 py-2 bg-gray-100">
                                                     <div className="flex items-center gap-3">
-                                                        <div className="w-8 h-8 rounded-full bg-blue-200 flex items-center justify-center text-sm font-medium text-blue-800">{p.name?.[0] ?? "?"}</div>
+                                                        <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-sm font-bold">
+                                                            {initials(p.name)}
+                                                        </div>
                                                         <div>
-                                                            <div className="text-sm font-medium">{p.name}</div>
+                                                            <div className="text-sm">{p.name}</div>
                                                             <div className="text-xs text-gray-500">{p.isHost ? 'Host' : 'Player'}</div>
                                                         </div>
                                                     </div>
-                                                    <div className="text-sm font-semibold">{p.score}</div>
+                                                    <div className="shrink-0">
+                                                        <span className="inline-flex items-center px-2.5 py-1 rounded-full text-sm font-semibold bg-blue-600 text-white">
+                                                            {p.score} Points
+                                                        </span>
+                                                    </div>
                                                 </div>
                                             ))}
                                         </div>

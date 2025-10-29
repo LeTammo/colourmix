@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import { ChatOutgoingMessage, GameStateOutgoingMessage, OutgoingMessage, type ChatSegment } from "../../../shared/models/messages";
 import { useSocket } from "../lib/socket";
+import { formatTime, initials } from "../lib/ui";
 
 function Chat({players, playerId}: {players: GameStateOutgoingMessage["gameState"]["players"] | undefined, playerId: string | null}) {
     const chatEndRef = useRef<HTMLDivElement | null>(null);
@@ -35,20 +36,6 @@ function Chat({players, playerId}: {players: GameStateOutgoingMessage["gameState
             });
             setMsg("");
         }
-    };
-
-    const initials = (name: string) => {
-        const parts = name.trim().split(/\s+/);
-        const letters = parts.slice(0, 2).map(p => p[0]?.toUpperCase()).join("");
-        return letters || name.slice(0, 2).toUpperCase();
-    };
-
-    const formatTime = (ts?: number) => {
-        if (!ts) return "";
-        const d = new Date(ts);
-        const hh = d.getHours().toString().padStart(2, "0");
-        const mm = d.getMinutes().toString().padStart(2, "0");
-        return `${hh}:${mm}`;
     };
 
     const renderSegments = (segments?: ChatSegment[], fallback?: string) => {

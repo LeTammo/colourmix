@@ -35,6 +35,7 @@ export interface Round {
 export class GameState {
     public gameId: string;
     public gameTitle: string;
+    public createdAt: number;
     public players: Player[];
     public maxPlayers: number;
     public timer: number;
@@ -52,6 +53,7 @@ export class GameState {
     ) {
         this.gameId = gameId;
         this.gameTitle = options.gameTitle;
+        this.createdAt = Date.now();
         this.inviteCode = options.inviteCode;
         this.players = [];
         this.maxPlayers = options.maxPlayers;
@@ -73,6 +75,7 @@ export class GameState {
         return {
             gameId: this.gameId,
             gameTitle: this.gameTitle,
+            createdAt: this.createdAt,
             players: this.players.reduce((acc, p) => {
                 acc[p.id] = { isHost: p.isHost, name: p.name, score: p.score };
                 return acc;
@@ -102,6 +105,7 @@ export class GameState {
 export interface GameStateOutgoing {
     gameId: string;
     gameTitle: string;
+    createdAt: number;
     players: {
         [id: string]: {
             isHost: boolean;
