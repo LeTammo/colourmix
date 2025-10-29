@@ -95,7 +95,7 @@ const GamesList: React.FC = () => {
 
                             {expanded ? (
                                 <>
-                                    <div className="mt-3 mb-3">
+                                    <div className="mt-3">
                                         <div className="text-sm text-gray-600">Round Duration: <span className="font-medium">{g.timerDuration} seconds</span></div>
                                         <div className="text-sm text-gray-600">Max Players: <span className="font-medium">{g.maxPlayers}</span></div>
                                         <div className="text-sm text-gray-600">Min Cards: <span className="font-medium">{g.minCards}</span></div>
@@ -128,7 +128,7 @@ const GamesList: React.FC = () => {
                                         </div>
                                     </div>
 
-                                    <div className="pb-4">
+                                    <div>
                                         <div className="text-sm font-semibold mb-2">Rounds:</div>
                                         <div className="flex flex-col gap-2">
                                             {g.rounds.map((r, i) => (
