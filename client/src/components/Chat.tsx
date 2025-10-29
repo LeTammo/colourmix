@@ -70,7 +70,7 @@ function Chat({players, playerId}: {players: GameStateOutgoingMessage["gameState
                     </div>
                     {players && (
                         <div className="max-h-60 overflow-y-auto">
-                            <ul className="divide-y divide-gray-200">
+                            <ul className="divide-y divide-gray-200 bg-white">
                                 {Array.from(Object.entries(players as Record<string, GameStateOutgoingMessage["gameState"]["players"][string]>))
                                     .sort((a, b) => b[1].score - a[1].score)
                                     .map(([id, p]) => (
