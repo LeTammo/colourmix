@@ -17,9 +17,8 @@ import "./App.css"
 const TITLE = import.meta.env.VITE_APP_TITLE || "blend!";
 
 function App() {
-    const [targetColor, setTargetColor] = useState<Map<Card, CMYKColor>>(new Map());
-    const [currentMix, setCurrentMix] = useState<Set<Card>>(new Set());
-    const [selection, setSelection] = useState(new Map<Card, CMYKColor>());
+    const [targetColor, setTargetColor] = useState<Set<Card>>(new Set<Card>());
+    const [selection, setSelection] = useState(new Set<Card>());
     const [timer, setTimer] = useState(-1);
     const [isHost, setIsHost] = useState(false);
     const [playerId, setPlayerId] = useState<string | null>(null);
@@ -78,20 +77,20 @@ function App() {
     // If the timer is -1 or 0, nothing can be selected
     // If the timer is >0, colors can be selected up to a count of MAX_MIXING_COUNT
     // No duplicate colors allowed in selection
-    const handleColorSelect = useCallback((selectedColor: [Card, CMYKColor]) => {
+    const handleColorSelect = useCallback((selectedColor: Card) => {
         if (timer <= 0) {
             return;
         }
 
-        const newSelection = new Map(selection);
+        const newSelection = new Set<Card>(selection);
 
-        if (newSelection.size >= MAX_SELECTION_COUNT && !newSelection.has(selectedColor[0])) {
+        if (newSelection.size >= MAX_SELECTION_COUNT && !newSelection.has(selectedColor)) {
             return;
         }
-        if (newSelection.has(selectedColor[0])) {
-            newSelection.delete(selectedColor[0]);
+        if (newSelection.has(selectedColor)) {
+            newSelection.delete(selectedColor);
         } else {
-            newSelection.set(selectedColor[0], selectedColor[1]);
+            newSelection.add(selectedColor);
         }
 
         setSelection(newSelection);
@@ -154,7 +153,8 @@ function App() {
             setState(gameState.rounds[gameState.round - 1]?.state || "waiting");
 
             const targetCards = gameState.rounds[gameState.round - 1]?.targetCards || [];
-            setTargetColor(createColorMap(targetCards));
+            setTargetColor(new Set<Card>(targetCards));
+            
             // Reset selection when round changes
             const pickedCards = gameState.rounds[gameState.round - 1]?.picks || {};
 
@@ -165,7 +165,7 @@ function App() {
 
             switch (state) {
                 case "waiting":
-                    setSelection(new Map());
+                    setSelection(new Set<Card>());
                     handleStopSound();
                     break;
                 case "finished":
@@ -173,17 +173,17 @@ function App() {
                         handleStopSound();
                         if (playerId === null) {
                             console.error("No player ID found");
-                            setSelection(new Map())
+                            setSelection(new Set<Card>());
                             break;
                         }
                         const playerCards = pickedCards[playerId]
 
                         if (playerCards === undefined) {
                             console.error("No player cards found, resetting selection");
-                            setSelection(new Map())
+                            setSelection(new Set<Card>());
                             break;
                         }
-                        setSelection(createColorMap(playerCards))
+                        setSelection(new Set<Card>(playerCards))
 
                         break;
                     }
@@ -193,7 +193,7 @@ function App() {
 
                     break;
                 default:
-                    setSelection(new Map())
+                    setSelection(new Set<Card>());
                     return
             }
         }
@@ -227,7 +227,8 @@ function App() {
             const roundState = currentRound?.state;
             if (roundState === "playing") {
                 const playerCards = currentRound?.picks?.[gameStateMessage.playerId] || [];
-                const restored = createColorMap(playerCards);
+                //const restored = createColorMap(playerCards);
+                const restored = new Set<Card>(playerCards);
                 setSelection(restored);
                 socketRef.current.emit("game_message", { type: "CARDS_PICKED", cards: Array.from(restored.keys()) });
             }
@@ -340,35 +341,12 @@ function App() {
         };
     }, [socket, onDisconnect]);
 
-    // Whenever the selection changes, recalculate the current mix.
-    // Only keys from `selection` are used because each key represents a selected card.
-    // The color lookup ensures that only valid cards with defined colors are added to the mix.
-    useEffect(() => {
-        const nextMix = new Set<Card>();
-        for (const colorName of selection.keys()) {
-            nextMix.add(colorName);
-        }
-        setCurrentMix(nextMix);
-    }, [selection]);
-
 
     useEffect(() => {
         if (connectionStatus === "authentication_error") {
             navigate("/login");
         }
     }, [connectionStatus, navigate]);
-    // Round timer
-    // Decrease timer every second if it's > 0
-    /*useEffect(() => {
-        if (timer > 0) {
-            const interval = setInterval(() => {
-                setTimer((prev) => prev - 1);
-            }, 1000);
-            return () => clearInterval(interval);
-        } else if (timer === 0) {
-            handleStopSound();
-        }
-    }, [timer]);*/
 
     // prepare hex values for targetColor and currentMix
     // useMemo to avoid recalculating on every render (only when targetColor or currentMix changes)
@@ -380,12 +358,12 @@ function App() {
     }, [gameState]);
 
     const targetColorHex = useMemo(() => currentTargetColor, [currentTargetColor]);
-    const mixedColorHex = useMemo(() => calculateHex(Array.from(currentMix)), [currentMix]);
+    const mixedColorHex = useMemo(() => calculateHex(Array.from(selection)), [selection]);
 
 
 
     const cardStates: CardState[] = useMemo(() => {
-        return [...colors.entries()].map(([name, arr]) => {
+        return [...colors.keys()].map((name) => {
             const color = calculateHex([name]);
             const inTarget = targetColor.has(name);
             const inSelection = selection.has(name);
@@ -404,7 +382,7 @@ function App() {
                 else if (inTarget && !inSelection) status = "selected-wrong";
             }
 
-            return { name, arr, color, inTarget, inSelection, status };
+            return { name, color, inTarget, inSelection, status };
         });
     }, [targetColor, selection, state]);
 

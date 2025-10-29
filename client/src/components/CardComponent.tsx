@@ -1,9 +1,8 @@
-import type { Card, CMYKColor } from "../../../shared/models/color";
+import type { Card } from "../../../shared/models/color";
 import Checkmark from "./Checkmark";
 
 export type CardState = {
     name: Card;
-    arr: CMYKColor;
     color: string;
     inTarget: boolean;
     inSelection: boolean;
@@ -14,7 +13,7 @@ type CardComponentProps = {
     cardState: CardState;
     state: string;
     timer: number;
-    handleColorSelect: (args: [Card, CMYKColor]) => void;
+    handleColorSelect: (args: Card) => void;
 };
 
 const CardComponent: React.FC<CardComponentProps> = ({ cardState, state, timer, handleColorSelect }) => {
@@ -46,7 +45,7 @@ const CardComponent: React.FC<CardComponentProps> = ({ cardState, state, timer, 
     return (<div
         key={cardState.name}
         onClick={() => {
-            if (state === "playing" && timer > 0) handleColorSelect([cardState.name, cardState.arr]);
+            if (state === "playing" && timer > 0) handleColorSelect(cardState.name);
         }}
         className={`color-card w-30 h-40 rounded-xl flex items-end justify-end
                     cursor-pointer border hover:scale-105 transition-transform relative`}
